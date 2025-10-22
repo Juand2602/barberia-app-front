@@ -121,7 +121,7 @@ export const CitasCalendar: React.FC<CitasCalendarProps> = ({
         date={date}
         onNavigate={onNavigate}
         min={new Date(0, 0, 0, 8, 0, 0)} // 8:00 AM
-        max={new Date(0, 0, 0, 20, 0, 0)} // 8:00 PM
+        max={new Date(0, 0, 0, 21, 0, 0)} // 8:00 PM
         step={15} // Intervalos de 15 minutos
         timeslots={4} // 4 slots por hora (15 min cada uno)
       />

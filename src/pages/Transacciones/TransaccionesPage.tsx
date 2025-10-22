@@ -1,5 +1,7 @@
+// src/pages/Transacciones/TransaccionesPage.tsx - ACTUALIZADO
+
 import React, { useEffect, useState } from 'react';
-import { Plus, TrendingUp, TrendingDown, Filter } from 'lucide-react';
+import { Plus, TrendingUp, TrendingDown, Filter, Clock, CheckCircle } from 'lucide-react';
 import { useTransaccionesStore } from '@stores/transaccionesStore';
 import { useEmpleadosStore } from '@stores/empleadosStore';
 import { transaccionesService } from '@services/transacciones.service';
@@ -10,7 +12,9 @@ import { TransaccionesTable } from '@components/tables/TransaccionesTable';
 import { IngresoForm } from '@components/forms/IngresoForm';
 import { EgresoForm } from '@components/forms/EgresoForm';
 import { TransaccionDetalle } from '@components/transacciones/TransaccionDetalle';
-import { Transaccion, CreateTransaccionDTO, TipoTransaccion } from '@/types/transaccion.types';
+import { RecibirPagoModal } from '@components/transacciones/RecibirPagoModal';
+import { ImprimirFactura } from '@components/transacciones/ImprimirFactura';
+import { Transaccion, CreateTransaccionDTO, TipoTransaccion, MarcarPagadaDTO, TransaccionItemDTO, EstadoPago } from '@/types/transaccion.types';
 
 type ModalType = 'ingreso' | 'egreso' | null;
 
@@ -21,6 +25,8 @@ export const TransaccionesPage: React.FC = () => {
 
   const [modalType, setModalType] = useState<ModalType>(null);
   const [isModalDetalleOpen, setIsModalDetalleOpen] = useState(false);
+  const [isModalPagoOpen, setIsModalPagoOpen] = useState(false);
+  const [isModalFacturaOpen, setIsModalFacturaOpen] = useState(false);
   const [transaccionSeleccionada, setTransaccionSeleccionada] = useState<Transaccion | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -28,6 +34,7 @@ export const TransaccionesPage: React.FC = () => {
   const [tipoFiltro, setTipoFiltro] = useState<TipoTransaccion | ''>('');
   const [empleadoFiltro, setEmpleadoFiltro] = useState<string>('');
   const [metodoPagoFiltro, setMetodoPagoFiltro] = useState<string>('');
+  const [estadoPagoFiltro, setEstadoPagoFiltro] = useState<EstadoPago | ''>('');
 
   useEffect(() => {
     fetchEmpleados(true);
@@ -37,13 +44,14 @@ export const TransaccionesPage: React.FC = () => {
 
   useEffect(() => {
     loadTransacciones();
-  }, [tipoFiltro, empleadoFiltro, metodoPagoFiltro]);
+  }, [tipoFiltro, empleadoFiltro, metodoPagoFiltro, estadoPagoFiltro]);
 
   const loadTransacciones = () => {
     const filtros: any = {};
     if (tipoFiltro) filtros.tipo = tipoFiltro;
     if (empleadoFiltro) filtros.empleadoId = empleadoFiltro;
     if (metodoPagoFiltro) filtros.metodoPago = metodoPagoFiltro;
+    if (estadoPagoFiltro) filtros.estadoPago = estadoPagoFiltro;
     fetchTransacciones(filtros);
   };
 
@@ -77,7 +85,56 @@ export const TransaccionesPage: React.FC = () => {
     setIsModalDetalleOpen(true);
   };
 
+  const handleRecibirPago = (transaccion: Transaccion) => {
+    setTransaccionSeleccionada(transaccion);
+    setIsModalPagoOpen(true);
+  };
+
+  const handleConfirmarPago = async (
+    transaccionId: string,
+    pagoData: MarcarPagadaDTO,
+    itemsActualizados?: TransaccionItemDTO[],
+    empleadoIdActualizado?: string
+  ) => {
+    try {
+      // Si hay items actualizados, primero actualizar la transacción
+      if (itemsActualizados || empleadoIdActualizado) {
+        const total = itemsActualizados
+          ? itemsActualizados.reduce((sum, item) => sum + item.subtotal, 0)
+          : undefined;
+
+        await transaccionesService.update(transaccionId, {
+          total,
+          empleadoId: empleadoIdActualizado,
+          // Note: items no se pueden actualizar directamente aquí
+          // Necesitarías un endpoint específico para eso
+        });
+      }
+
+      // Marcar como pagada
+      await transaccionesService.marcarComoPagada(transaccionId, pagoData);
+      
+      alert('Pago recibido exitosamente. La cita ha sido completada.');
+      setIsModalPagoOpen(false);
+      setTransaccionSeleccionada(null);
+      loadTransacciones();
+      fetchEstadisticas();
+    } catch (error: any) {
+      throw error;
+    }
+  };
+
+  const handleImprimir = (transaccion: Transaccion) => {
+    setTransaccionSeleccionada(transaccion);
+    setIsModalFacturaOpen(true);
+  };
+
   const handleDelete = async (transaccion: Transaccion) => {
+    if (transaccion.estadoPago === 'PAGADO') {
+      alert('No se puede eliminar una transacción pagada');
+      return;
+    }
+
     if (
       !confirm(
         `¿Estás seguro de eliminar esta transacción por ${transaccion.total.toLocaleString()}?`
@@ -120,7 +177,7 @@ export const TransaccionesPage: React.FC = () => {
 
       {/* Estadísticas */}
       {estadisticas && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
           <Card className="!p-0">
             <div className="p-6">
               <div className="flex items-center justify-between">
@@ -184,14 +241,36 @@ export const TransaccionesPage: React.FC = () => {
 
           <Card className="!p-0">
             <div className="p-6">
-              <div>
-                <p className="text-sm text-gray-600 mb-1">Total Transacciones</p>
-                <p className="text-2xl font-bold text-blue-600">
-                  {estadisticas.totalTransacciones}
-                </p>
-                <p className="text-xs text-gray-500 mt-1">
-                  {estadisticas.cantidadIngresos} ingresos / {estadisticas.cantidadEgresos} egresos
-                </p>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600 mb-1">Pendiente</p>
+                  <p className="text-2xl font-bold text-yellow-600">
+                    {formatCurrency(estadisticas.totalPendiente || 0)}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">Por cobrar</p>
+                </div>
+                <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
+                  <Clock className="text-yellow-600" size={24} />
+                </div>
+              </div>
+            </div>
+          </Card>
+
+          <Card className="!p-0">
+            <div className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600 mb-1">Cobrado</p>
+                  <p className="text-2xl font-bold text-blue-600">
+                    {formatCurrency(estadisticas.totalPagado || 0)}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {estadisticas.totalTransaccionesPagadas || 0} pagadas
+                  </p>
+                </div>
+                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <CheckCircle className="text-blue-600" size={24} />
+                </div>
               </div>
             </div>
           </Card>
@@ -216,6 +295,16 @@ export const TransaccionesPage: React.FC = () => {
             </select>
 
             <select
+              value={estadoPagoFiltro}
+              onChange={(e) => setEstadoPagoFiltro(e.target.value as EstadoPago | '')}
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Todos los estados</option>
+              <option value="PENDIENTE">Pendientes</option>
+              <option value="PAGADO">Pagadas</option>
+            </select>
+
+            <select
               value={empleadoFiltro}
               onChange={(e) => setEmpleadoFiltro(e.target.value)}
               className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -236,6 +325,7 @@ export const TransaccionesPage: React.FC = () => {
               <option value="">Todos los métodos</option>
               <option value="EFECTIVO">Efectivo</option>
               <option value="TRANSFERENCIA">Transferencia</option>
+              <option value="PENDIENTE">Pendiente</option>
             </select>
           </div>
 
@@ -272,6 +362,8 @@ export const TransaccionesPage: React.FC = () => {
             transacciones={transacciones}
             onView={handleView}
             onDelete={handleDelete}
+            onRecibirPago={handleRecibirPago}
+            onImprimir={handleImprimir}
           />
         )}
       </Card>
@@ -325,6 +417,31 @@ export const TransaccionesPage: React.FC = () => {
           />
         )}
       </Modal>
+
+      {/* Modal Recibir Pago */}
+      {transaccionSeleccionada && (
+        <RecibirPagoModal
+          isOpen={isModalPagoOpen}
+          onClose={() => {
+            setIsModalPagoOpen(false);
+            setTransaccionSeleccionada(null);
+          }}
+          transaccion={transaccionSeleccionada}
+          onConfirm={handleConfirmarPago}
+        />
+      )}
+
+      {/* Modal Imprimir Factura */}
+      {transaccionSeleccionada && (
+        <ImprimirFactura
+          isOpen={isModalFacturaOpen}
+          onClose={() => {
+            setIsModalFacturaOpen(false);
+            setTransaccionSeleccionada(null);
+          }}
+          transaccion={transaccionSeleccionada}
+        />
+      )}
     </div>
   );
 };

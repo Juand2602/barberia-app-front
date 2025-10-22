@@ -1,9 +1,13 @@
+// src/types/transaccion.types.ts - ACTUALIZADO
+
 import { Cliente } from './cliente.types';
 import { Empleado } from './empleado.types';
 import { Servicio } from './servicio.types';
+import { Cita } from './cita.types';
 
 export type TipoTransaccion = 'INGRESO' | 'EGRESO';
-export type MetodoPago = 'EFECTIVO' | 'TRANSFERENCIA';
+export type MetodoPago = 'EFECTIVO' | 'TRANSFERENCIA' | 'PENDIENTE';
+export type EstadoPago = 'PENDIENTE' | 'PAGADO'; // ← NUEVO
 
 export interface TransaccionItem {
   id: string;
@@ -21,15 +25,18 @@ export interface Transaccion {
   tipo: TipoTransaccion;
   clienteId: string | null;
   empleadoId: string | null;
+  citaId: string | null; // ← NUEVO
   fecha: string;
   total: number;
   metodoPago: MetodoPago;
+  estadoPago: EstadoPago; // ← NUEVO
   referencia: string | null;
   concepto: string | null;
   categoria: string | null;
   notas: string | null;
   cliente?: Cliente;
   empleado?: Empleado;
+  cita?: Cita; // ← NUEVO
   items: TransaccionItem[];
   createdAt: string;
   updatedAt: string;
@@ -46,9 +53,11 @@ export interface CreateTransaccionDTO {
   tipo: TipoTransaccion;
   clienteId?: string;
   empleadoId?: string;
+  citaId?: string; // ← NUEVO
   fecha?: string;
   total: number;
   metodoPago: MetodoPago;
+  estadoPago?: EstadoPago; // ← NUEVO
   referencia?: string;
   concepto?: string;
   categoria?: string;
@@ -60,17 +69,25 @@ export interface UpdateTransaccionDTO {
   tipo?: TipoTransaccion;
   clienteId?: string | null;
   empleadoId?: string | null;
+  citaId?: string | null; // ← NUEVO
   fecha?: string;
   total?: number;
   metodoPago?: MetodoPago;
+  estadoPago?: EstadoPago; // ← NUEVO
   referencia?: string | null;
   concepto?: string | null;
   categoria?: string | null;
   notas?: string | null;
 }
 
+export interface MarcarPagadaDTO {
+  metodoPago: 'EFECTIVO' | 'TRANSFERENCIA';
+  referencia?: string;
+}
+
 export interface TransaccionesEstadisticas {
   totalTransacciones: number;
+  totalTransaccionesPagadas: number; // ← NUEVO
   cantidadIngresos: number;
   cantidadEgresos: number;
   totalIngresos: number;
@@ -78,6 +95,8 @@ export interface TransaccionesEstadisticas {
   balance: number;
   totalEfectivo: number;
   totalTransferencias: number;
+  totalPagado: number; // ← NUEVO
+  totalPendiente: number; // ← NUEVO
 }
 
 export interface TransaccionesFiltros {
@@ -85,8 +104,10 @@ export interface TransaccionesFiltros {
   fechaFin?: Date;
   tipo?: TipoTransaccion;
   metodoPago?: MetodoPago;
+  estadoPago?: EstadoPago; // ← NUEVO
   empleadoId?: string;
   clienteId?: string;
+  citaId?: string; // ← NUEVO
 }
 
 export interface ServicioMasVendido {

@@ -1,8 +1,11 @@
+// src/services/transacciones.service.ts (Frontend) - CORREGIDO
+
 import { api } from './api';
 import {
   Transaccion,
   CreateTransaccionDTO,
   UpdateTransaccionDTO,
+  MarcarPagadaDTO,
   TransaccionesEstadisticas,
   TransaccionesFiltros,
   ServicioMasVendido,
@@ -27,11 +30,17 @@ export const transaccionesService = {
       if (filtros.metodoPago) {
         params.metodoPago = filtros.metodoPago;
       }
+      if (filtros.estadoPago) {
+        params.estadoPago = filtros.estadoPago;
+      }
       if (filtros.empleadoId) {
         params.empleadoId = filtros.empleadoId;
       }
       if (filtros.clienteId) {
         params.clienteId = filtros.clienteId;
+      }
+      if (filtros.citaId) {
+        params.citaId = filtros.citaId;
       }
     }
 
@@ -39,9 +48,21 @@ export const transaccionesService = {
     return response.data.data;
   },
 
+  // Obtener transacciones pendientes
+  async getPendientes(): Promise<Transaccion[]> {
+    const response = await api.get('/transacciones/pendientes');
+    return response.data.data;
+  },
+
   // Obtener transacciones por fecha
   async getByFecha(fecha: Date): Promise<Transaccion[]> {
     const response = await api.get(`/transacciones/fecha/${fecha.toISOString().split('T')[0]}`);
+    return response.data.data;
+  },
+
+  // Obtener transacción por cita
+  async getByCitaId(citaId: string): Promise<Transaccion> {
+    const response = await api.get(`/transacciones/cita/${citaId}`);
     return response.data.data;
   },
 
@@ -94,6 +115,12 @@ export const transaccionesService = {
   // Crear una nueva transacción
   async create(data: CreateTransaccionDTO): Promise<Transaccion> {
     const response = await api.post('/transacciones', data);
+    return response.data.data;
+  },
+
+  // Marcar como pagada ← MÉTODO QUE FALTABA
+  async marcarComoPagada(id: string, data: MarcarPagadaDTO): Promise<Transaccion> {
+    const response = await api.post(`/transacciones/${id}/marcar-pagada`, data);
     return response.data.data;
   },
 

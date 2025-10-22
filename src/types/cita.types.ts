@@ -1,3 +1,5 @@
+// src/types/cita.types.ts - ACTUALIZADO
+
 import { Cliente } from './cliente.types';
 import { Empleado } from './empleado.types';
 
@@ -6,6 +8,7 @@ export type OrigenCita = 'WHATSAPP' | 'MANUAL' | 'TELEFONO';
 
 export interface Cita {
   id: string;
+  radicado: string; // ← AGREGADO
   clienteId: string;
   empleadoId: string;
   servicioNombre: string;
