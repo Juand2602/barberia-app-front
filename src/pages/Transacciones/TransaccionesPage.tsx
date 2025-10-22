@@ -1,7 +1,7 @@
-// src/pages/Transacciones/TransaccionesPage.tsx - ACTUALIZADO
+// src/pages/Transacciones/TransaccionesPage.tsx - COMPLETO Y CORREGIDO
 
 import React, { useEffect, useState } from 'react';
-import { Plus, TrendingUp, TrendingDown, Filter, Clock, CheckCircle } from 'lucide-react';
+import { Plus, TrendingUp, TrendingDown, Filter, Clock, CheckCircle, Calendar } from 'lucide-react';
 import { useTransaccionesStore } from '@stores/transaccionesStore';
 import { useEmpleadosStore } from '@stores/empleadosStore';
 import { transaccionesService } from '@services/transacciones.service';
@@ -13,7 +13,7 @@ import { IngresoForm } from '@components/forms/IngresoForm';
 import { EgresoForm } from '@components/forms/EgresoForm';
 import { TransaccionDetalle } from '@components/transacciones/TransaccionDetalle';
 import { RecibirPagoModal } from '@components/transacciones/RecibirPagoModal';
-import { ImprimirFactura } from '@components/transacciones/ImprimirFactura';
+import { ImprimirTicket } from '@components/transacciones/ImprimirTicket';
 import { Transaccion, CreateTransaccionDTO, TipoTransaccion, MarcarPagadaDTO, TransaccionItemDTO, EstadoPago } from '@/types/transaccion.types';
 
 type ModalType = 'ingreso' | 'egreso' | null;
@@ -26,7 +26,7 @@ export const TransaccionesPage: React.FC = () => {
   const [modalType, setModalType] = useState<ModalType>(null);
   const [isModalDetalleOpen, setIsModalDetalleOpen] = useState(false);
   const [isModalPagoOpen, setIsModalPagoOpen] = useState(false);
-  const [isModalFacturaOpen, setIsModalFacturaOpen] = useState(false);
+  const [isModalTicketOpen, setIsModalTicketOpen] = useState(false);
   const [transaccionSeleccionada, setTransaccionSeleccionada] = useState<Transaccion | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -35,6 +35,7 @@ export const TransaccionesPage: React.FC = () => {
   const [empleadoFiltro, setEmpleadoFiltro] = useState<string>('');
   const [metodoPagoFiltro, setMetodoPagoFiltro] = useState<string>('');
   const [estadoPagoFiltro, setEstadoPagoFiltro] = useState<EstadoPago | ''>('');
+  const [filtroRapido, setFiltroRapido] = useState<'todos' | 'hoy'>('hoy');
 
   useEffect(() => {
     fetchEmpleados(true);
@@ -44,10 +45,22 @@ export const TransaccionesPage: React.FC = () => {
 
   useEffect(() => {
     loadTransacciones();
-  }, [tipoFiltro, empleadoFiltro, metodoPagoFiltro, estadoPagoFiltro]);
+  }, [tipoFiltro, empleadoFiltro, metodoPagoFiltro, estadoPagoFiltro, filtroRapido]);
 
   const loadTransacciones = () => {
     const filtros: any = {};
+    
+    // Filtro rápido "Hoy"
+    if (filtroRapido === 'hoy') {
+      const hoy = new Date();
+      hoy.setHours(0, 0, 0, 0);
+      const mañana = new Date(hoy);
+      mañana.setDate(mañana.getDate() + 1);
+      
+      filtros.fechaInicio = hoy;
+      filtros.fechaFin = mañana;
+    }
+    
     if (tipoFiltro) filtros.tipo = tipoFiltro;
     if (empleadoFiltro) filtros.empleadoId = empleadoFiltro;
     if (metodoPagoFiltro) filtros.metodoPago = metodoPagoFiltro;
@@ -106,8 +119,6 @@ export const TransaccionesPage: React.FC = () => {
         await transaccionesService.update(transaccionId, {
           total,
           empleadoId: empleadoIdActualizado,
-          // Note: items no se pueden actualizar directamente aquí
-          // Necesitarías un endpoint específico para eso
         });
       }
 
@@ -126,7 +137,7 @@ export const TransaccionesPage: React.FC = () => {
 
   const handleImprimir = (transaccion: Transaccion) => {
     setTransaccionSeleccionada(transaccion);
-    setIsModalFacturaOpen(true);
+    setIsModalTicketOpen(true);
   };
 
   const handleDelete = async (transaccion: Transaccion) => {
@@ -279,73 +290,95 @@ export const TransaccionesPage: React.FC = () => {
 
       {/* Toolbar */}
       <Card className="mb-6">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          {/* Filtros */}
-          <div className="flex gap-3 items-center flex-wrap">
-            <Filter size={18} className="text-gray-600" />
-
-            <select
-              value={tipoFiltro}
-              onChange={(e) => setTipoFiltro(e.target.value as TipoTransaccion | '')}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">Todos los tipos</option>
-              <option value="INGRESO">Ingresos</option>
-              <option value="EGRESO">Egresos</option>
-            </select>
-
-            <select
-              value={estadoPagoFiltro}
-              onChange={(e) => setEstadoPagoFiltro(e.target.value as EstadoPago | '')}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">Todos los estados</option>
-              <option value="PENDIENTE">Pendientes</option>
-              <option value="PAGADO">Pagadas</option>
-            </select>
-
-            <select
-              value={empleadoFiltro}
-              onChange={(e) => setEmpleadoFiltro(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">Todos los barberos</option>
-              {empleados.map((emp) => (
-                <option key={emp.id} value={emp.id}>
-                  {emp.nombre}
-                </option>
-              ))}
-            </select>
-
-            <select
-              value={metodoPagoFiltro}
-              onChange={(e) => setMetodoPagoFiltro(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">Todos los métodos</option>
-              <option value="EFECTIVO">Efectivo</option>
-              <option value="TRANSFERENCIA">Transferencia</option>
-              <option value="PENDIENTE">Pendiente</option>
-            </select>
-          </div>
-
-          {/* Botones de acción */}
+        <div className="space-y-4">
+          {/* Filtro Rápido HOY */}
           <div className="flex gap-3">
             <Button
-              onClick={() => handleOpenModal('ingreso')}
-              className="flex items-center gap-2 bg-green-600 hover:bg-green-700"
-            >
-              <Plus size={20} />
-              Registrar Venta
-            </Button>
-            <Button
-              onClick={() => handleOpenModal('egreso')}
-              variant="danger"
+              variant={filtroRapido === 'hoy' ? 'primary' : 'secondary'}
+              onClick={() => setFiltroRapido('hoy')}
               className="flex items-center gap-2"
             >
-              <Plus size={20} />
-              Registrar Gasto
+              <Calendar size={18} />
+              Hoy
             </Button>
+            <Button
+              variant={filtroRapido === 'todos' ? 'primary' : 'secondary'}
+              onClick={() => setFiltroRapido('todos')}
+              className="flex items-center gap-2"
+            >
+              <Filter size={18} />
+              Todas
+            </Button>
+          </div>
+
+          {/* Filtros detallados */}
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="flex gap-3 items-center flex-wrap">
+              <Filter size={18} className="text-gray-600" />
+
+              <select
+                value={tipoFiltro}
+                onChange={(e) => setTipoFiltro(e.target.value as TipoTransaccion | '')}
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">Todos los tipos</option>
+                <option value="INGRESO">Ingresos</option>
+                <option value="EGRESO">Egresos</option>
+              </select>
+
+              <select
+                value={estadoPagoFiltro}
+                onChange={(e) => setEstadoPagoFiltro(e.target.value as EstadoPago | '')}
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">Todos los estados</option>
+                <option value="PENDIENTE">Pendientes</option>
+                <option value="PAGADO">Pagadas</option>
+              </select>
+
+              <select
+                value={empleadoFiltro}
+                onChange={(e) => setEmpleadoFiltro(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">Todos los barberos</option>
+                {empleados.map((emp) => (
+                  <option key={emp.id} value={emp.id}>
+                    {emp.nombre}
+                  </option>
+                ))}
+              </select>
+
+              <select
+                value={metodoPagoFiltro}
+                onChange={(e) => setMetodoPagoFiltro(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">Todos los métodos</option>
+                <option value="EFECTIVO">Efectivo</option>
+                <option value="TRANSFERENCIA">Transferencia</option>
+                <option value="PENDIENTE">Pendiente</option>
+              </select>
+            </div>
+
+            {/* Botones de acción */}
+            <div className="flex gap-3">
+              <Button
+                onClick={() => handleOpenModal('ingreso')}
+                className="flex items-center gap-2 bg-green-600 hover:bg-green-700"
+              >
+                <Plus size={20} />
+                Registrar Venta
+              </Button>
+              <Button
+                onClick={() => handleOpenModal('egreso')}
+                variant="danger"
+                className="flex items-center gap-2"
+              >
+                <Plus size={20} />
+                Registrar Gasto
+              </Button>
+            </div>
           </div>
         </div>
       </Card>
@@ -431,12 +464,12 @@ export const TransaccionesPage: React.FC = () => {
         />
       )}
 
-      {/* Modal Imprimir Factura */}
+      {/* Modal Imprimir Ticket */}
       {transaccionSeleccionada && (
-        <ImprimirFactura
-          isOpen={isModalFacturaOpen}
+        <ImprimirTicket
+          isOpen={isModalTicketOpen}
           onClose={() => {
-            setIsModalFacturaOpen(false);
+            setIsModalTicketOpen(false);
             setTransaccionSeleccionada(null);
           }}
           transaccion={transaccionSeleccionada}
