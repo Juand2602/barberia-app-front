@@ -53,7 +53,7 @@ export const RegistrarPagoComisionModal: React.FC<RegistrarPagoComisionModalProp
       metodoPago: 'EFECTIVO',
       referencia: '',
       notas: '',
-      ajuste: '0',
+      ajuste: '',
     },
   });
 
@@ -166,14 +166,12 @@ export const RegistrarPagoComisionModal: React.FC<RegistrarPagoComisionModalProp
           <div className="relative">
             <input
               type="number"
-              step="0.01"
+              step="10000"
               {...register('ajuste')}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="0"
             />
-            <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-              <DollarSign className="text-gray-400" size={18} />
-            </div>
+          
           </div>
           <p className="mt-1 text-xs text-gray-500">
             Usa valores positivos para aumentar o negativos para descontar. Ej: -5000 para descontar $5.000

@@ -15,8 +15,6 @@ interface EmpleadoDetalleProps {
 
 export const EmpleadoDetalle: React.FC<EmpleadoDetalleProps> = ({
   empleado,
-  onEliminar,
-  onEditar,
   onCerrar,
 }) => {
   return (
@@ -31,14 +29,6 @@ export const EmpleadoDetalle: React.FC<EmpleadoDetalleProps> = ({
             </Badge>
             <span className="text-sm text-gray-500">{(empleado as any).puesto || '—'}</span>
           </div>
-        </div>
-        <div className="flex gap-2">
-          <Button size="sm" variant="ghost" onClick={onEditar} title="Editar empleado">
-            Editar
-          </Button>
-          <Button size="sm" variant="danger" onClick={onEliminar} title="Desactivar empleado">
-            Desactivar
-          </Button>
         </div>
       </div>
 
@@ -78,7 +68,6 @@ export const EmpleadoDetalle: React.FC<EmpleadoDetalleProps> = ({
       <div className="border-t pt-4 flex justify-between">
         <div />
         <div className="flex gap-2">
-          <Button variant="danger" onClick={onEliminar}>Desactivar</Button>
           <Button variant="ghost" onClick={onCerrar}>Cerrar</Button>
         </div>
       </div>

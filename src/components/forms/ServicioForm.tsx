@@ -22,15 +22,22 @@ export const ServicioForm: React.FC<ServicioFormProps> = ({
     handleSubmit,
     formState: { errors },
     reset,
+    setValue, // Añadimos setValue para establecer el valor predeterminado
   } = useForm<CreateServicioDTO>({
-    defaultValues: initialData,
+    defaultValues: {
+      ...initialData,
+      duracionMinutos: 30, // Establecemos 30 minutos como valor predeterminado
+    },
   });
 
   useEffect(() => {
     if (initialData) {
       reset(initialData);
+    } else {
+      // Si no hay datos iniciales, establecemos la duración en 30 minutos
+      setValue('duracionMinutos', 30);
     }
-  }, [initialData, reset]);
+  }, [initialData, reset, setValue]);
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -92,6 +99,8 @@ export const ServicioForm: React.FC<ServicioFormProps> = ({
           })}
           error={errors.duracionMinutos?.message}
           placeholder="30"
+          readOnly // Hacemos el campo de solo lectura
+          className="bg-gray-100" // Añadimos un estilo visual para indicar que es de solo lectura
         />
       </div>
 

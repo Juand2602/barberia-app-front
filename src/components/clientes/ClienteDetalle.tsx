@@ -14,7 +14,6 @@ interface ClienteDetalleProps {
 
 export const ClienteDetalle: React.FC<ClienteDetalleProps> = ({
   cliente,
-  onEliminar,
   onCerrar,
 }) => {
   const fechaRegistro = cliente.fechaRegistro ? new Date(cliente.fechaRegistro) : cliente.createdAt ? new Date(cliente.createdAt) : null;
@@ -84,9 +83,6 @@ export const ClienteDetalle: React.FC<ClienteDetalleProps> = ({
 
       {/* Acciones */}
       <div className="border-t pt-4 flex justify-between">
-        <Button variant="danger" onClick={onEliminar}>
-          Desactivar Cliente
-        </Button>
         <Button variant="ghost" onClick={onCerrar}>
           Cerrar
         </Button>
