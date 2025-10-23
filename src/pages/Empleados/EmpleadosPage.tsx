@@ -1,14 +1,20 @@
+// src/pages/Empleados/EmpleadosPage.tsx - COMPLETO CON COMISIONES
+
 import React, { useEffect, useState } from 'react';
 import { Plus } from 'lucide-react';
 import { useEmpleadosStore } from '@stores/empleadosStore';
 import { empleadosService } from '@services/empleados.service';
-import { Empleado, CreateEmpleadoDTO } from '@/types/empleado.types';
+import { comisionesService } from '@services/comisiones.service';
+import { Empleado, CreateEmpleadoDTO, ComisionPendiente } from '@/types/empleado.types';
 import { Card } from '@components/ui/Card';
 import { Button } from '@components/ui/Button';
 import { Modal } from '@components/ui/Modal';
 import { EmpleadosTable } from '@components/tables/EmpleadosTable';
 import { EmpleadoForm } from '@components/forms/EmpleadoForm';
 import { EmpleadoDetalle } from '@components/empleados/EmpleadoDetalle';
+import { ComisionesModal } from '@components/empleados/ComisionesModal';
+import { RegistrarPagoComisionModal } from '@components/empleados/RegistrarPagoComisionModal';
+import { startOfMonth, endOfMonth, format } from 'date-fns';
 
 export const EmpleadosPage: React.FC = () => {
   const { empleados, loading, fetchEmpleados } = useEmpleadosStore();
@@ -21,9 +27,14 @@ export const EmpleadosPage: React.FC = () => {
   const [isDetalleOpen, setIsDetalleOpen] = useState(false);
   const [empleadoSeleccionado, setEmpleadoSeleccionado] = useState<Empleado | null>(null);
 
+  // ✅ NUEVO: Comisiones
+  const [isComisionesOpen, setIsComisionesOpen] = useState(false);
+  const [isPagoComisionOpen, setIsPagoComisionOpen] = useState(false);
+  const [empleadoComisiones, setEmpleadoComisiones] = useState<Empleado | null>(null);
+  const [comisionPendiente, setComisionPendiente] = useState<ComisionPendiente | null>(null);
+
   useEffect(() => {
     fetchEmpleados();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleCreate = () => {
@@ -48,7 +59,6 @@ export const EmpleadosPage: React.FC = () => {
       await empleadosService.delete(empleado.id);
       fetchEmpleados();
       alert('Empleado desactivado exitosamente');
-      // si estaba abierto en detalle, ciérralo
       if (empleadoSeleccionado?.id === empleado.id) {
         setIsDetalleOpen(false);
         setEmpleadoSeleccionado(null);
@@ -78,13 +88,80 @@ export const EmpleadosPage: React.FC = () => {
     }
   };
 
+  // ✅ NUEVO: Manejar apertura del modal de comisiones
+  const handleVerComisiones = (empleado: Empleado) => {
+    setEmpleadoComisiones(empleado);
+    setIsComisionesOpen(true);
+  };
+
+  // ✅ NUEVO: Manejar apertura del modal de registrar pago
+  const handleRegistrarPago = async (empleadoId: string) => {
+    if (!empleadoComisiones) return;
+
+    try {
+      // Calcular comisiones del periodo actual
+      const hoy = new Date();
+      const inicio = startOfMonth(hoy);
+      const fin = endOfMonth(hoy);
+
+      const comision = await comisionesService.calcularPendientes(
+        empleadoId,
+        inicio,
+        fin
+      );
+
+      setComisionPendiente(comision);
+      setIsComisionesOpen(false);
+      setIsPagoComisionOpen(true);
+    } catch (error: any) {
+      alert(error.response?.data?.message || 'Error al calcular comisiones');
+    }
+  };
+
+  // ✅ NUEVO: Confirmar pago de comisión
+  const handleConfirmarPago = async (data: {
+    metodoPago: 'EFECTIVO' | 'TRANSFERENCIA';
+    referencia?: string;
+    notas?: string;
+    ajuste: number;
+  }) => {
+    if (!empleadoComisiones || !comisionPendiente) return;
+
+    try {
+      const hoy = new Date();
+      const inicio = startOfMonth(hoy);
+      const fin = endOfMonth(hoy);
+      const periodo = format(inicio, 'yyyy-MM');
+
+      await comisionesService.registrarPago(empleadoComisiones.id, {
+        empleadoId: empleadoComisiones.id,
+        periodo,
+        fechaInicio: inicio,
+        fechaFin: fin,
+        metodoPago: data.metodoPago,
+        referencia: data.referencia,
+        notas: data.notas,
+        ajuste: data.ajuste,
+      });
+
+      alert('Pago de comisión registrado exitosamente');
+      setIsPagoComisionOpen(false);
+      setComisionPendiente(null);
+      
+      // Reabrir el modal de comisiones para ver el historial actualizado
+      setIsComisionesOpen(true);
+    } catch (error: any) {
+      throw error;
+    }
+  };
+
   return (
     <div className="p-6 max-w-7xl mx-auto">
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-3xl font-bold text-gray-900">Empleados</h1>
         <p className="text-gray-600 mt-1">
-          Gestiona los barberos y su disponibilidad
+          Gestiona los barberos, horarios y comisiones
         </p>
       </div>
 
@@ -142,6 +219,7 @@ export const EmpleadosPage: React.FC = () => {
             onView={handleView}
             onEdit={handleEdit}
             onDelete={handleDelete}
+            onVerComisiones={handleVerComisiones}
           />
         )}
       </Card>
@@ -161,6 +239,7 @@ export const EmpleadosPage: React.FC = () => {
             nombre: editingEmpleado.nombre,
             telefono: editingEmpleado.telefono,
             especialidades: editingEmpleado.especialidades,
+            porcentajeComision: editingEmpleado.porcentajeComision,
             horarioLunes: editingEmpleado.horarioLunes || undefined,
             horarioMartes: editingEmpleado.horarioMartes || undefined,
             horarioMiercoles: editingEmpleado.horarioMiercoles || undefined,
@@ -192,7 +271,6 @@ export const EmpleadosPage: React.FC = () => {
           <EmpleadoDetalle
             empleado={empleadoSeleccionado}
             onEliminar={() => {
-              // cerrar modal y eliminar
               setIsDetalleOpen(false);
               handleDelete(empleadoSeleccionado);
             }}
@@ -207,6 +285,33 @@ export const EmpleadosPage: React.FC = () => {
           />
         )}
       </Modal>
+
+      {/* ✅ NUEVO: Modal Comisiones */}
+      {empleadoComisiones && (
+        <ComisionesModal
+          isOpen={isComisionesOpen}
+          onClose={() => {
+            setIsComisionesOpen(false);
+            setEmpleadoComisiones(null);
+          }}
+          empleado={empleadoComisiones}
+          onRegistrarPago={handleRegistrarPago}
+        />
+      )}
+
+      {/* ✅ NUEVO: Modal Registrar Pago */}
+      {empleadoComisiones && comisionPendiente && (
+        <RegistrarPagoComisionModal
+          isOpen={isPagoComisionOpen}
+          onClose={() => {
+            setIsPagoComisionOpen(false);
+            setComisionPendiente(null);
+          }}
+          empleado={empleadoComisiones}
+          comisionPendiente={comisionPendiente}
+          onConfirm={handleConfirmarPago}
+        />
+      )}
     </div>
   );
 };

@@ -33,15 +33,19 @@ export const EmpleadoForm: React.FC<EmpleadoFormProps> = ({
     formState: { errors },
     reset,
     control,
+    watch,
   } = useForm<CreateEmpleadoDTO>({
     defaultValues: initialData || {
       especialidades: [],
+      porcentajeComision: 50, // ✅ Valor por defecto
     },
   });
 
   const [selectedEspecialidades, setSelectedEspecialidades] = useState<string[]>(
     initialData?.especialidades || []
   );
+
+  const porcentajeComision = watch('porcentajeComision');
 
   useEffect(() => {
     if (initialData) {
@@ -100,6 +104,57 @@ export const EmpleadoForm: React.FC<EmpleadoFormProps> = ({
           error={errors.telefono?.message}
           placeholder="3001234567"
         />
+
+        {/* ✅ NUEVO: Campo de porcentaje de comisión */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Porcentaje de Comisión * (%)
+          </label>
+          <div className="relative">
+            <input
+              type="number"
+              min="0"
+              max="100"
+              step="0.5"
+              {...register('porcentajeComision', {
+                required: 'El porcentaje de comisión es requerido',
+                min: {
+                  value: 0,
+                  message: 'El porcentaje no puede ser negativo',
+                },
+                max: {
+                  value: 100,
+                  message: 'El porcentaje no puede ser mayor a 100',
+                },
+                valueAsNumber: true,
+              })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="50"
+            />
+            <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+              <span className="text-gray-500 text-sm">%</span>
+            </div>
+          </div>
+          {errors.porcentajeComision && (
+            <p className="mt-1 text-sm text-red-600">{errors.porcentajeComision.message}</p>
+          )}
+          <div className="mt-2 p-3 bg-blue-50 rounded-lg">
+            <p className="text-sm text-gray-700">
+              <span className="font-semibold">Distribución:</span>
+            </p>
+            <div className="mt-1 flex justify-between text-sm">
+              <span className="text-gray-600">
+                Empleado: <span className="font-semibold text-blue-600">{porcentajeComision || 0}%</span>
+              </span>
+              <span className="text-gray-600">
+                Barbería: <span className="font-semibold text-green-600">{100 - (porcentajeComision || 0)}%</span>
+              </span>
+            </div>
+            <p className="mt-2 text-xs text-gray-500">
+              Ejemplo: En una venta de $30.000, el empleado gana ${((30000 * (porcentajeComision || 0)) / 100).toLocaleString()}
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Especialidades */}

@@ -1,16 +1,19 @@
+// src/components/tables/EmpleadosTable.tsx
+
 import React from 'react';
-import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
-import { Eye, Edit, Trash2, Phone, Calendar } from 'lucide-react';
+import { Eye, Edit2, Trash2, DollarSign } from 'lucide-react';
 import { Empleado } from '@/types/empleado.types';
 import { Button } from '@components/ui/Button';
 import { Badge } from '@components/ui/Badge';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
 
 interface EmpleadosTableProps {
   empleados: Empleado[];
   onView: (empleado: Empleado) => void;
   onEdit: (empleado: Empleado) => void;
   onDelete: (empleado: Empleado) => void;
+  onVerComisiones: (empleado: Empleado) => void; // ✅ NUEVO
 }
 
 export const EmpleadosTable: React.FC<EmpleadosTableProps> = ({
@@ -18,29 +21,18 @@ export const EmpleadosTable: React.FC<EmpleadosTableProps> = ({
   onView,
   onEdit,
   onDelete,
+  onVerComisiones, // ✅ NUEVO
 }) => {
   if (empleados.length === 0) {
     return (
       <div className="text-center py-12">
-        <p className="text-gray-500 text-lg">No se encontraron empleados</p>
+        <p className="text-gray-500 text-lg">No hay empleados registrados</p>
         <p className="text-gray-400 text-sm mt-2">
-          Crea tu primer empleado haciendo clic en "Nuevo Empleado"
+          Agrega tu primer barbero para comenzar
         </p>
       </div>
     );
   }
-
-  const getDiasLaborales = (empleado: Empleado): string[] => {
-    const dias: string[] = [];
-    if (empleado.horarioLunes) dias.push('L');
-    if (empleado.horarioMartes) dias.push('M');
-    if (empleado.horarioMiercoles) dias.push('X');
-    if (empleado.horarioJueves) dias.push('J');
-    if (empleado.horarioViernes) dias.push('V');
-    if (empleado.horarioSabado) dias.push('S');
-    if (empleado.horarioDomingo) dias.push('D');
-    return dias;
-  };
 
   return (
     <div className="overflow-x-auto">
@@ -48,22 +40,26 @@ export const EmpleadosTable: React.FC<EmpleadosTableProps> = ({
         <thead className="bg-gray-50">
           <tr>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Empleado
+              Nombre
             </th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Contacto
+              Teléfono
             </th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
               Especialidades
             </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Días Laborales
+            {/* ✅ NUEVA COLUMNA */}
+            <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Comisión
             </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
               Citas
             </th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
               Estado
+            </th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Fecha Ingreso
             </th>
             <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
               Acciones
@@ -74,70 +70,80 @@ export const EmpleadosTable: React.FC<EmpleadosTableProps> = ({
           {empleados.map((empleado) => (
             <tr key={empleado.id} className="hover:bg-gray-50 transition-colors">
               <td className="px-6 py-4 whitespace-nowrap">
-                <div>
-                  <div className="font-medium text-gray-900">{empleado.nombre}</div>
-                  <div className="text-sm text-gray-500">
-                    {empleado.fechaIngreso ? `Desde ${format(new Date(empleado.fechaIngreso), 'MMM yyyy', { locale: es })}` : ''}
-                  </div>
-                </div>
+                <div className="text-sm font-medium text-gray-900">{empleado.nombre}</div>
               </td>
               <td className="px-6 py-4 whitespace-nowrap">
-                <div className="flex items-center text-sm text-gray-600">
-                  <Phone size={14} className="mr-1" />
-                  {empleado.telefono || '—'}
-                </div>
+                <div className="text-sm text-gray-900">{empleado.telefono}</div>
               </td>
               <td className="px-6 py-4">
                 <div className="flex flex-wrap gap-1">
-                  {(empleado.especialidades || []).map((esp: string, idx: number) => (
+                  {empleado.especialidades.slice(0, 2).map((esp, idx) => (
                     <Badge key={idx} variant="info" className="text-xs">
                       {esp}
                     </Badge>
                   ))}
+                  {empleado.especialidades.length > 2 && (
+                    <Badge variant="default" className="text-xs">
+                      +{empleado.especialidades.length - 2}
+                    </Badge>
+                  )}
                 </div>
+              </td>
+              {/* ✅ NUEVA COLUMNA - Porcentaje de Comisión */}
+              <td className="px-6 py-4 whitespace-nowrap text-center">
+                <div className="inline-flex items-center gap-1 px-3 py-1 bg-green-50 rounded-full">
+                  <DollarSign size={14} className="text-green-600" />
+                  <span className="text-sm font-semibold text-green-600">
+                    {empleado.porcentajeComision}%
+                  </span>
+                </div>
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap text-center">
+                <span className="text-sm font-medium text-gray-900">
+                  {empleado._count?.citas || 0}
+                </span>
               </td>
               <td className="px-6 py-4 whitespace-nowrap">
-                <div className="flex gap-1">
-                  {getDiasLaborales(empleado).map((dia, idx) => (
-                    <span
-                      key={idx}
-                      className="inline-flex items-center justify-center w-6 h-6 text-xs font-medium bg-green-100 text-green-800 rounded"
-                    >
-                      {dia}
-                    </span>
-                  ))}
-                </div>
+                {empleado.activo ? (
+                  <Badge variant="success">Activo</Badge>
+                ) : (
+                  <Badge variant="danger">Inactivo</Badge>
+                )}
               </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                <div className="flex items-center">
-                  <Calendar size={14} className="mr-1" />
-                  {empleado._count?.citas || 0} citas
-                </div>
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap">
-                <Badge variant={empleado.activo ? 'success' : 'danger'}>
-                  {empleado.activo ? 'Activo' : 'Inactivo'}
-                </Badge>
+              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                {format(new Date(empleado.fechaIngreso), 'dd/MM/yyyy', { locale: es })}
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                 <div className="flex justify-end gap-2">
+                  {/* ✅ NUEVO BOTÓN - Ver Comisiones */}
+                  <Button
+                    size="sm"
+                    variant="primary"
+                    onClick={() => onVerComisiones(empleado)}
+                    title="Ver comisiones"
+                    className="bg-green-600 hover:bg-green-700"
+                  >
+                    <DollarSign size={16} />
+                  </Button>
+
                   <Button
                     size="sm"
                     variant="ghost"
                     onClick={() => onView(empleado)}
                     title="Ver detalle"
-                    aria-label={`Ver ${empleado.nombre}`}
                   >
                     <Eye size={16} />
                   </Button>
+
                   <Button
                     size="sm"
                     variant="ghost"
                     onClick={() => onEdit(empleado)}
                     title="Editar"
                   >
-                    <Edit size={16} />
+                    <Edit2 size={16} />
                   </Button>
+
                   <Button
                     size="sm"
                     variant="ghost"
