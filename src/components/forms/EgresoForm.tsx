@@ -37,7 +37,7 @@ export const EgresoForm: React.FC<EgresoFormProps> = ({
     defaultValues: {
       concepto: '',
       categoria: '',
-      total: 0,
+      total: undefined,
       metodoPago: 'EFECTIVO',
       referencia: '',
       notas: '',
@@ -108,17 +108,16 @@ const handleFormSubmit = (data: any) => {
       <Input
         label="Monto *"
         type="number"
-        step="0.01"
-        min="0"
+        step="1000"
         {...register('total', {
           required: 'El monto es requerido',
           valueAsNumber: true,
           min: {
-            value: 0.01,
+            value: 1,
             message: 'El monto debe ser mayor a 0',
           },
         })}
-        error={errors.total?.message as string}
+        error={errors.total?.message}
         placeholder="50000"
       />
 

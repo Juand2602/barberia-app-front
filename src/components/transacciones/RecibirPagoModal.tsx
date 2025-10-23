@@ -1,4 +1,4 @@
-// src/components/transacciones/RecibirPagoModal.tsx
+// src/components/transacciones/RecibirPagoModal.tsx - ACTUALIZADO
 
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
@@ -43,11 +43,27 @@ export const RecibirPagoModal: React.FC<RecibirPagoModalProps> = ({
   const [items, setItems] = useState<ItemFormulario[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { register, handleSubmit, formState: { errors }, watch } = useForm<FormValues>({
+  // ✅ NUEVA LÓGICA: Determinar el empleado predeterminado
+  const getEmpleadoPredeterminado = (): string => {
+    // 1. Si la transacción ya tiene empleado asignado, usar ese
+    if (transaccion.empleadoId) {
+      return transaccion.empleadoId;
+    }
+    
+    // 2. Si viene de una cita, usar el empleado de la cita
+    if (transaccion.cita?.empleadoId) {
+      return transaccion.cita.empleadoId;
+    }
+    
+    // 3. Si no hay ninguno, dejar vacío
+    return '';
+  };
+
+  const { register, handleSubmit, formState: { errors }, watch, setValue } = useForm<FormValues>({
     defaultValues: {
       metodoPago: 'EFECTIVO',
       referencia: '',
-      empleadoId: transaccion.empleadoId || '',
+      empleadoId: '', // Se establecerá en el useEffect
     },
   });
 
@@ -56,6 +72,7 @@ export const RecibirPagoModal: React.FC<RecibirPagoModalProps> = ({
   useEffect(() => {
     if (isOpen) {
       loadData();
+      
       // Cargar items existentes
       setItems(
         transaccion.items.map((item, idx) => ({
@@ -67,6 +84,10 @@ export const RecibirPagoModal: React.FC<RecibirPagoModalProps> = ({
           nombreServicio: item.servicio.nombre,
         }))
       );
+
+      // ✅ ESTABLECER EL EMPLEADO PREDETERMINADO
+      const empleadoId = getEmpleadoPredeterminado();
+      setValue('empleadoId', empleadoId);
     }
   }, [isOpen, transaccion]);
 
@@ -150,6 +171,11 @@ export const RecibirPagoModal: React.FC<RecibirPagoModalProps> = ({
       return;
     }
 
+    if (!data.empleadoId) {
+      alert('Debe seleccionar un barbero');
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const pagoData: MarcarPagadaDTO = {
@@ -186,19 +212,32 @@ export const RecibirPagoModal: React.FC<RecibirPagoModalProps> = ({
       <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
         {/* Info de la cita */}
         {transaccion.cita && (
-          <div className="bg-blue-50 p-4 rounded-lg">
-            <p className="text-sm text-gray-600">Cita asociada</p>
-            <p className="font-semibold text-gray-900">{transaccion.cita.radicado}</p>
-            <p className="text-sm text-gray-600">
-              {transaccion.cliente?.nombre} - {new Date(transaccion.cita.fechaHora).toLocaleString()}
-            </p>
+          <div className="bg-blue-50 p-4 rounded-lg space-y-2">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Cita asociada</p>
+                <p className="font-semibold text-gray-900">{transaccion.cita.radicado}</p>
+                <p className="text-sm text-gray-600">
+                  {transaccion.cliente?.nombre} - {new Date(transaccion.cita.fechaHora).toLocaleString('es-CO', {
+                    dateStyle: 'short',
+                    timeStyle: 'short'
+                  })}
+                </p>
+              </div>
+              {transaccion.cita.empleado && (
+                <div className="text-right">
+                  <p className="text-sm text-gray-600">Barbero de la cita</p>
+                  <p className="font-semibold text-blue-700">{transaccion.cita.empleado.nombre}</p>
+                </div>
+              )}
+            </div>
           </div>
         )}
 
         {/* Empleado */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Barbero *
+            Barbero que realizó el servicio *
           </label>
           <select
             {...register('empleadoId', { required: 'El barbero es requerido' })}
@@ -329,14 +368,11 @@ export const RecibirPagoModal: React.FC<RecibirPagoModalProps> = ({
           </label>
           <div className="grid grid-cols-2 gap-3">
             <label
-              className={`
-                flex items-center justify-center gap-2 p-4 border-2 rounded-lg cursor-pointer transition-colors
-                ${
-                  metodoPago === 'EFECTIVO'
-                    ? 'bg-green-50 border-green-500 text-green-900'
-                    : 'bg-white border-gray-300 hover:border-gray-400'
-                }
-              `}
+              className={`flex items-center justify-center gap-2 p-4 border-2 rounded-lg cursor-pointer transition-colors ${
+                metodoPago === 'EFECTIVO'
+                  ? 'bg-green-50 border-green-500 text-green-900'
+                  : 'bg-white border-gray-300 hover:border-gray-400'
+              }`}
             >
               <input
                 type="radio"
@@ -349,14 +385,11 @@ export const RecibirPagoModal: React.FC<RecibirPagoModalProps> = ({
             </label>
 
             <label
-              className={`
-                flex items-center justify-center gap-2 p-4 border-2 rounded-lg cursor-pointer transition-colors
-                ${
-                  metodoPago === 'TRANSFERENCIA'
-                    ? 'bg-purple-50 border-purple-500 text-purple-900'
-                    : 'bg-white border-gray-300 hover:border-gray-400'
-                }
-              `}
+              className={`flex items-center justify-center gap-2 p-4 border-2 rounded-lg cursor-pointer transition-colors ${
+                metodoPago === 'TRANSFERENCIA'
+                  ? 'bg-purple-50 border-purple-500 text-purple-900'
+                  : 'bg-white border-gray-300 hover:border-gray-400'
+              }`}
             >
               <input
                 type="radio"

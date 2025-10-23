@@ -7,7 +7,7 @@ import { Cita } from './cita.types';
 
 export type TipoTransaccion = 'INGRESO' | 'EGRESO';
 export type MetodoPago = 'EFECTIVO' | 'TRANSFERENCIA' | 'PENDIENTE';
-export type EstadoPago = 'PENDIENTE' | 'PAGADO'; // ← NUEVO
+export type EstadoPago = 'PENDIENTE' | 'PAGADO';
 
 export interface TransaccionItem {
   id: string;
@@ -20,23 +20,24 @@ export interface TransaccionItem {
   createdAt: string;
 }
 
+// ✅ ACTUALIZADO: Incluir empleado en la cita
 export interface Transaccion {
   id: string;
   tipo: TipoTransaccion;
   clienteId: string | null;
   empleadoId: string | null;
-  citaId: string | null; // ← NUEVO
+  citaId: string | null;
   fecha: string;
   total: number;
   metodoPago: MetodoPago;
-  estadoPago: EstadoPago; // ← NUEVO
+  estadoPago: EstadoPago;
   referencia: string | null;
   concepto: string | null;
   categoria: string | null;
   notas: string | null;
   cliente?: Cliente;
   empleado?: Empleado;
-  cita?: Cita; // ← NUEVO
+  cita?: Cita & { empleado?: Empleado }; // ✅ Incluir empleado en la cita
   items: TransaccionItem[];
   createdAt: string;
   updatedAt: string;
@@ -53,11 +54,11 @@ export interface CreateTransaccionDTO {
   tipo: TipoTransaccion;
   clienteId?: string;
   empleadoId?: string;
-  citaId?: string; // ← NUEVO
+  citaId?: string;
   fecha?: string;
   total: number;
   metodoPago: MetodoPago;
-  estadoPago?: EstadoPago; // ← NUEVO
+  estadoPago?: EstadoPago;
   referencia?: string;
   concepto?: string;
   categoria?: string;
@@ -69,11 +70,11 @@ export interface UpdateTransaccionDTO {
   tipo?: TipoTransaccion;
   clienteId?: string | null;
   empleadoId?: string | null;
-  citaId?: string | null; // ← NUEVO
+  citaId?: string | null;
   fecha?: string;
   total?: number;
   metodoPago?: MetodoPago;
-  estadoPago?: EstadoPago; // ← NUEVO
+  estadoPago?: EstadoPago;
   referencia?: string | null;
   concepto?: string | null;
   categoria?: string | null;
@@ -87,7 +88,7 @@ export interface MarcarPagadaDTO {
 
 export interface TransaccionesEstadisticas {
   totalTransacciones: number;
-  totalTransaccionesPagadas: number; // ← NUEVO
+  totalTransaccionesPagadas: number;
   cantidadIngresos: number;
   cantidadEgresos: number;
   totalIngresos: number;
@@ -95,8 +96,8 @@ export interface TransaccionesEstadisticas {
   balance: number;
   totalEfectivo: number;
   totalTransferencias: number;
-  totalPagado: number; // ← NUEVO
-  totalPendiente: number; // ← NUEVO
+  totalPagado: number;
+  totalPendiente: number;
 }
 
 export interface TransaccionesFiltros {
@@ -104,10 +105,10 @@ export interface TransaccionesFiltros {
   fechaFin?: Date;
   tipo?: TipoTransaccion;
   metodoPago?: MetodoPago;
-  estadoPago?: EstadoPago; // ← NUEVO
+  estadoPago?: EstadoPago;
   empleadoId?: string;
   clienteId?: string;
-  citaId?: string; // ← NUEVO
+  citaId?: string;
 }
 
 export interface ServicioMasVendido {
