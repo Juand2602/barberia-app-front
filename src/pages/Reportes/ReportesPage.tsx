@@ -9,6 +9,7 @@ import {
   Calendar,
   ShoppingBag,
   FileText,
+  Download,
 } from "lucide-react";
 import { startOfMonth, endOfMonth, format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -16,11 +17,13 @@ import { useReportesStore } from "../../stores/reportesStore";
 import FiltrosFecha from "../../components/reportes/FiltrosFecha";
 import { Card } from "../../components/ui/Card";
 import { Badge } from "../../components/ui/Badge";
+import { PDFGenerator } from "../../utils/pdfUtils";
 
 const ReportesPage: React.FC = () => {
   const [fechaInicio, setFechaInicio] = useState(startOfMonth(new Date()));
   const [fechaFin, setFechaFin] = useState(endOfMonth(new Date()));
   const [reporteActivo, setReporteActivo] = useState<string>("dashboard");
+  const [isExporting, setIsExporting] = useState(false);
 
   const {
     dashboard,
@@ -77,6 +80,239 @@ const ReportesPage: React.FC = () => {
       currency: "COP",
       minimumFractionDigits: 0,
     }).format(value);
+  };
+
+  // Función para exportar a PDF
+  const exportarPDF = async () => {
+    setIsExporting(true);
+    try {
+      const pdf = new PDFGenerator();
+      
+      // Agregar encabezado (la marca de agua se agrega automáticamente)
+      const reporteActual = reportes.find(r => r.id === reporteActivo);
+      const fechaTexto = `Del ${format(fechaInicio, "dd/MM/yyyy")} al ${format(fechaFin, "dd/MM/yyyy")}`;
+      await pdf.addHeader(reporteActual?.nombre || "Reporte", fechaTexto);
+      
+      // Generar contenido según el tipo de reporte
+      switch (reporteActivo) {
+        case "dashboard":
+          await generarPDFDashboard(pdf);
+          break;
+        case "ventas":
+          await generarPDFVentas(pdf);
+          break;
+        case "ventas-empleado":
+          await generarPDFVentasEmpleado(pdf);
+          break;
+        case "ventas-servicio":
+          await generarPDFVentasServicio(pdf);
+          break;
+        case "citas":
+          await generarPDFCitas(pdf);
+          break;
+        case "financiero":
+          await generarPDFFinanciero(pdf);
+          break;
+        case "clientes":
+          await generarPDFClientes(pdf);
+          break;
+      }
+      
+      // Guardar el PDF
+      pdf.save(`${reporteActual?.nombre || "Reporte"}_${format(new Date(), "dd-MM-yyyy_HH-mm")}.pdf`);
+    } catch (error) {
+      console.error("Error al generar PDF:", error);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  // Funciones para generar PDF de cada reporte
+  const generarPDFDashboard = async (pdf: PDFGenerator) => {
+    if (!dashboard) return;
+    
+    // Resumen general
+    pdf.addSection("Resumen General");
+    pdf.addSummaryBoxes([
+      { label: "Total Ventas", value: formatCurrency(dashboard.ventas.total), color: "#10b981" },
+      { label: "Total Citas", value: dashboard.citas.total.toString(), color: "#3b82f6" },
+      { label: "Clientes Nuevos", value: dashboard.clientes.cantidad.toString(), color: "#8b5cf6" },
+      { label: "Empleado Top", value: dashboard.empleadoTop?.nombre || "N/A", color: "#6366f1" }
+    ]);
+    
+    // Servicios más vendidos
+    pdf.addSection("Servicios Más Vendidos");
+    const headers = ["#", "Servicio", "Cantidad", "Total"];
+    const data = dashboard.serviciosMasVendidos.map((servicio, index) => [
+      (index + 1).toString(),
+      servicio.nombre,
+      servicio.cantidad.toString(),
+      formatCurrency(servicio.total)
+    ]);
+    pdf.addTable(headers, data);
+  };
+
+  const generarPDFVentas = async (pdf: PDFGenerator) => {
+    if (!reporteVentas) return;
+    
+    // Resumen
+    pdf.addSection("Resumen de Ventas");
+    pdf.addSummaryBoxes([
+      { label: "Total Ingresos", value: formatCurrency(reporteVentas.resumen.totalIngresos), color: "#10b981" },
+      { label: "Cantidad Ventas", value: reporteVentas.resumen.cantidadVentas.toString(), color: "#3b82f6" },
+      { label: "Promedio por Venta", value: formatCurrency(reporteVentas.resumen.promedioVenta), color: "#8b5cf6" }
+    ]);
+    
+    // Ingresos por método de pago
+    pdf.addSection("Ingresos por Método de Pago");
+    const headersMetodo = ["Método", "Transacciones", "Total"];
+    const dataMetodo = Object.entries(reporteVentas.resumen.porMetodoPago).map(
+      ([metodo, data]) => [
+        metodo,
+        data.cantidad.toString(),
+        formatCurrency(data.total)
+      ]
+    );
+    pdf.addTable(headersMetodo, dataMetodo);
+    
+    // Detalle de transacciones
+    pdf.addSection("Detalle de Transacciones");
+    const headersTrans = ["Fecha", "Cliente", "Empleado", "Servicios", "Método", "Total"];
+    const dataTrans = reporteVentas.transacciones.map(t => [
+      format(new Date(t.fecha), "dd/MM/yyyy HH:mm", { locale: es }),
+      t.cliente,
+      t.empleado,
+      t.servicios,
+      t.metodoPago,
+      formatCurrency(t.total)
+    ]);
+    pdf.addTable(headersTrans, dataTrans);
+  };
+
+  const generarPDFVentasEmpleado = async (pdf: PDFGenerator) => {
+    if (!reporteVentasPorEmpleado) return;
+    
+    pdf.addSection("Desempeño por Empleado");
+    const headers = ["#", "Empleado", "Ventas", "Total"];
+    const data = reporteVentasPorEmpleado.empleados.map((empleado, index) => [
+      (index + 1).toString(),
+      empleado.nombre,
+      empleado.cantidadVentas.toString(),
+      formatCurrency(empleado.totalVentas)
+    ]);
+    pdf.addTable(headers, data);
+    
+    // Detalle de servicios por empleado
+    pdf.addSection("Servicios por Empleado");
+    reporteVentasPorEmpleado.empleados.forEach((empleado) => {
+      pdf.addText(`${empleado.nombre}:`, 12, true);
+      const headersServ = ["Servicio", "Cantidad"];
+      const dataServ = Object.entries(empleado.servicios).map(
+        ([servicio, cantidad]) => [servicio, cantidad.toString()]
+      );
+      pdf.addTable(headersServ, dataServ);
+    });
+  };
+
+  const generarPDFVentasServicio = async (pdf: PDFGenerator) => {
+    if (!reporteVentasPorServicio) return;
+    
+    pdf.addSection("Análisis por Servicio");
+    const headers = ["#", "Servicio", "Cantidad", "Total", "Promedio"];
+    const data = reporteVentasPorServicio.servicios.map((servicio, index) => [
+      (index + 1).toString(),
+      servicio.nombre,
+      servicio.cantidadVendida.toString(),
+      formatCurrency(servicio.totalGenerado),
+      formatCurrency(servicio.totalGenerado / servicio.cantidadVendida)
+    ]);
+    pdf.addTable(headers, data);
+  };
+
+  const generarPDFCitas = async (pdf: PDFGenerator) => {
+    if (!reporteCitas) return;
+    
+    // Resumen
+    pdf.addSection("Resumen de Citas");
+    pdf.addSummaryBoxes([
+      { label: "Total Citas", value: reporteCitas.resumen.totalCitas.toString(), color: "#3b82f6" },
+      { label: "Completadas", value: (reporteCitas.resumen.porEstado.COMPLETADA || 0).toString(), color: "#10b981" },
+      { label: "Canceladas", value: (reporteCitas.resumen.porEstado.CANCELADA || 0).toString(), color: "#ef4444" },
+      { label: "Pendientes", value: ((reporteCitas.resumen.porEstado.PENDIENTE || 0) + (reporteCitas.resumen.porEstado.CONFIRMADA || 0)).toString(), color: "#f59e0b" }
+    ]);
+    
+    // Ocupación por empleado
+    pdf.addSection("Ocupación por Empleado");
+    const headers = ["Empleado", "Total Citas", "Completadas", "Canceladas"];
+    const data = reporteCitas.ocupacionPorEmpleado.map(empleado => [
+      empleado.nombre,
+      empleado.totalCitas.toString(),
+      empleado.completadas.toString(),
+      empleado.canceladas.toString()
+    ]);
+    pdf.addTable(headers, data);
+  };
+
+  const generarPDFFinanciero = async (pdf: PDFGenerator) => {
+    if (!reporteFinanciero) return;
+    
+    // Resumen
+    pdf.addSection("Resumen Financiero");
+    pdf.addSummaryBoxes([
+      { label: "Ingresos", value: formatCurrency(reporteFinanciero.resumen.totalIngresos), color: "#10b981" },
+      { label: "Egresos", value: formatCurrency(reporteFinanciero.resumen.totalEgresos), color: "#ef4444" },
+      { label: "Utilidad", value: formatCurrency(reporteFinanciero.resumen.utilidad), color: reporteFinanciero.resumen.utilidad >= 0 ? "#10b981" : "#ef4444" },
+      { label: "Margen", value: `${reporteFinanciero.resumen.margenUtilidad.toFixed(1)}%`, color: reporteFinanciero.resumen.margenUtilidad >= 0 ? "#10b981" : "#ef4444" }
+    ]);
+    
+    // Ingresos por método
+    pdf.addSection("Ingresos por Método de Pago");
+    const headersIngresos = ["Método", "Total"];
+    const dataIngresos = Object.entries(reporteFinanciero.ingresosPorMetodo).map(
+      ([metodo, total]) => [metodo, formatCurrency(total)]
+    );
+    pdf.addTable(headersIngresos, dataIngresos);
+    
+    // Egresos por categoría
+    pdf.addSection("Egresos por Categoría");
+    const headersEgresos = ["Categoría", "Total"];
+    const dataEgresos = Object.entries(reporteFinanciero.egresosPorCategoria).map(
+      ([categoria, total]) => [categoria, formatCurrency(total)]
+    );
+    pdf.addTable(headersEgresos, dataEgresos);
+  };
+
+  const generarPDFClientes = async (pdf: PDFGenerator) => {
+    if (!reporteClientes) return;
+    
+    // Resumen
+    pdf.addSection("Resumen de Clientes");
+    pdf.addSummaryBoxes([
+      { label: "Clientes Nuevos", value: reporteClientes.resumen.clientesNuevos.toString(), color: "#3b82f6" },
+      { label: "Clientes Activos", value: reporteClientes.resumen.clientesActivos.toString(), color: "#10b981" },
+      { label: "Ticket Promedio", value: formatCurrency(reporteClientes.resumen.ticketPromedio), color: "#8b5cf6" }
+    ]);
+    
+    // Top clientes
+    pdf.addSection("Top 10 Clientes por Gasto");
+    const headersTop = ["#", "Cliente", "Compras", "Total Gastado"];
+    const dataTop = reporteClientes.topClientes.map((cliente, index) => [
+      (index + 1).toString(),
+      cliente.nombre,
+      cliente.cantidadCompras.toString(),
+      formatCurrency(cliente.totalGastado)
+    ]);
+    pdf.addTable(headersTop, dataTop);
+    
+    // Clientes frecuentes
+    pdf.addSection("Clientes Más Frecuentes");
+    const headersFrec = ["#", "Cliente", "Visitas"];
+    const dataFrec = reporteClientes.clientesFrecuentes.map((cliente, index) => [
+      (index + 1).toString(),
+      cliente.nombre,
+      cliente.visitas.toString()
+    ]);
+    pdf.addTable(headersFrec, dataFrec);
   };
 
   const reportes = [
@@ -171,6 +407,18 @@ const ReportesPage: React.FC = () => {
         onFechaFinChange={setFechaFin}
         onAplicar={generarReporte}
       />
+
+      {/* Botón de exportación a PDF */}
+      <div className="flex justify-end mb-4">
+        <button
+          onClick={exportarPDF}
+          disabled={isExporting || loading}
+          className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+        >
+          <Download className="w-4 h-4" />
+          {isExporting ? "Exportando..." : "Exportar a PDF"}
+        </button>
+      </div>
 
       {/* Contenido del reporte */}
       {loading && (

@@ -37,8 +37,25 @@ export const Sidebar: React.FC = () => {
       {/* Logo */}
       <div className="px-6 py-8 border-b border-gray-800">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
-            <Scissors className="text-white" size={24} />
+           {/* ✅ LOGO - Opción 1: Con imagen */}
+          <div className="w-12 h-12 rounded-lg flex items-center justify-center overflow-hidden bg-white">
+            <img 
+              src="/logo.png" 
+              alt="M Barberia" 
+              className="w-full h-full object-contain"
+              onError={(e) => {
+                // Si falla al cargar, mostrar el ícono de respaldo
+                const target = e.target as HTMLImageElement;
+                target.style.display = 'none';
+                const parent = target.parentElement;
+                if (parent) {
+                  parent.classList.add('bg-red-600');
+                  const icon = document.createElement('div');
+                  icon.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-white"><path d="M18.44 3.06A10.94 10.94 0 0 0 12 0C5.37 0 0 5.37 0 12s5.37 12 12 12 12-5.37 12-12c0-2.11-.55-4.09-1.51-5.82"/><path d="M8.5 12h7"/></svg>';
+                  parent.appendChild(icon.firstChild as Node);
+                }
+              }}
+            />
           </div>
           <div>
             <h1 className="text-white font-bold text-xl">Barbería App</h1>

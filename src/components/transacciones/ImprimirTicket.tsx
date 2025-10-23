@@ -1,4 +1,4 @@
-// src/components/transacciones/ImprimirTicket.tsx
+// src/components/transacciones/ImprimirTicket.tsx - CON LOGO (AJUSTADO ESPACIADO)
 
 import React, { useRef } from 'react';
 import { format } from 'date-fns';
@@ -40,35 +40,46 @@ export const ImprimirTicket: React.FC<ImprimirTicketProps> = ({
     const ventana = window.open('', '_blank');
     if (!ventana) return;
 
-    // --- ESTILOS CENTRALIZADOS Y CORREGIDOS CON CONTENEDOR CENTRADO ---
     const printStyles = `
       <style>
         body { 
           font-family: 'Courier New', monospace; 
           font-size: 12px; 
           line-height: 1.4;
-          width: 576px; /* Ancho exacto para impresora de 80mm (se mantiene) */
+          width: 576px;
           margin: 0;
-          padding: 0; /* Quitamos el padding del body principal */
+          padding: 0;
           box-sizing: border-box;
         }
-        /* --- NUEVO CONTENEDOR CENTRADO --- */
         .ticket-container {
-          width: 80%; /* O un valor fijo como 520px */
-          max-width: 440px; /* Evita que sea demasiado ancho en pantallas grandes */
-          margin: 0 auto; /* ¡Esta es la magia para centrarlo! */
-          padding: 5mm; /* El padding ahora va aquí */
+          width: 80%;
+          max-width: 440px;
+          margin: 0 auto;
+          padding: 5mm;
           box-sizing: border-box;
+        }
+
+        /* --- Ajustes para acercar logo y título --- */
+        .logo-container {
+          text-align: center;
+          margin-bottom: 0px; /* reducido */
+        }
+        .logo-container img {
+          width: 70px; /* un poco más pequeño para evitar empujar */
+          height: auto;
+          margin: 0 auto;
+          display: block;
         }
         .header { 
           text-align: center; 
           border-bottom: 1px dashed #000; 
-          padding-bottom: 10px; 
-          margin-bottom: 10px; 
+          padding-bottom: 2px; /* reducido */
+          margin-bottom: 4px;  /* reducido */
         }
         .title { 
           font-size: 16px; 
-          font-weight: bold; 
+          font-weight: bold;
+          margin-top: 0px; /* pequeño ajuste para pegar con el logo */
         }
         .subtitle { 
           font-size: 10px; 
@@ -101,6 +112,7 @@ export const ImprimirTicket: React.FC<ImprimirTicketProps> = ({
       <html>
         <head>
           <title>Ticket de Venta #${transaccion.id}</title>
+          <meta charset="UTF-8">
           ${printStyles}
         </head>
         <body>
@@ -140,7 +152,6 @@ export const ImprimirTicket: React.FC<ImprimirTicketProps> = ({
         <div 
           ref={ticketRef} 
           className="bg-white p-4 border-2 border-dashed border-gray-300 mx-auto"
-          // --- ESTILOS PARA LA VISTA PREVIA (simulando el contenedor centrado) ---
           style={{ 
             width: '80mm', 
             fontFamily: 'Courier New, monospace', 
@@ -149,10 +160,35 @@ export const ImprimirTicket: React.FC<ImprimirTicketProps> = ({
             transformOrigin: 'top center'
           }}
         >
-          {/* Header */}
-          <div className="header">
-            <div className="title">LA BARBERÍA</div>
-            <div className="subtitle">Calle 45 #23-10, Bucaramanga</div>
+          {/* ✅ LOGO */}
+          <div 
+            className="logo-container" 
+            style={{ textAlign: 'center', marginBottom: '2px' }} /* reducido */
+          >
+            <img 
+              src="/logo.png" 
+              alt="M Barberia" 
+              style={{ width: '70px', height: 'auto', margin: '0 auto', display: 'block' }} /* tamaño reducido y display block */
+              onError={(e) => {
+                // Si falla al cargar, ocultar la imagen
+                (e.target as HTMLImageElement).style.display = 'none';
+              }}
+            />
+          </div>
+
+          {/* Header (con estilos inline para vista previa en DOM) */}
+          <div 
+            className="header"
+            style={{ 
+              textAlign: 'center', 
+              borderBottom: '1px dashed #000', 
+              paddingBottom: '4px', /* reducido */
+              marginBottom: '4px'  /* reducido */
+            }}
+          >
+            <div className="title" style={{ marginTop: '2px' }}>M BARBERIA</div>
+            <div className="subtitle">Bucaramanga, Santander</div>
+            <div className="subtitle">Tel: 300 123 4567</div>
             <div className="subtitle">Ticket de Venta</div>
           </div>
           
