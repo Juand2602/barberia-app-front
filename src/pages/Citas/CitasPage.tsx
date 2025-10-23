@@ -185,11 +185,11 @@ export const CitasPage: React.FC = () => {
             <p className="text-sm text-gray-600">Pendientes</p>
           </Card>
           <Card className="!p-4">
-            <p className="text-2xl font-bold text-green-600">{estadisticas.confirmadas}</p>
+            <p className="text-2xl font-bold text-blue-600">{estadisticas.confirmadas}</p>
             <p className="text-sm text-gray-600">Confirmadas</p>
           </Card>
           <Card className="!p-4">
-            <p className="text-2xl font-bold text-gray-600">{estadisticas.completadas}</p>
+            <p className="text-2xl font-bold text-green-600">{estadisticas.completadas}</p>
             <p className="text-sm text-gray-600">Completadas</p>
           </Card>
           <Card className="!p-4">
@@ -269,11 +269,11 @@ export const CitasPage: React.FC = () => {
             <span>Pendiente</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-green-600 rounded"></div>
+            <div className="w-4 h-4 bg-blue-600 rounded"></div>
             <span>Confirmada</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-gray-600 rounded"></div>
+            <div className="w-4 h-4 bg-green-600 rounded"></div>
             <span>Completada</span>
           </div>
           <div className="flex items-center gap-2">
@@ -350,9 +350,9 @@ export const CitasPage: React.FC = () => {
                           cita.estado === 'PENDIENTE'
                             ? 'bg-yellow-100 text-yellow-800'
                             : cita.estado === 'CONFIRMADA'
-                            ? 'bg-green-100 text-green-800'
+                            ? 'bg-blue-100 text-blue-800'
                             : cita.estado === 'COMPLETADA'
-                            ? 'bg-gray-100 text-gray-800'
+                            ? 'bg-green-100 text-green-800'
                             : 'bg-red-100 text-red-800'
                         }`}
                       >

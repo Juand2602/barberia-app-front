@@ -156,7 +156,7 @@ const ReportesPage: React.FC = () => {
                   isActive ? `text-${reporte.color}-900` : "text-gray-600"
                 }`}
               >
-                {reporte.nombre.split(" ")[0]}
+                {reporte.nombre}
               </p>
             </button>
           );

@@ -97,11 +97,11 @@ export const DashboardPage: React.FC = () => {
   const getEstadoColor = (estado: string) => {
     const colors: any = {
       PENDIENTE: 'bg-yellow-100 text-yellow-800',
-      CONFIRMADA: 'bg-green-100 text-green-800',
-      COMPLETADA: 'bg-gray-100 text-gray-800',
+      CONFIRMADA: 'bg-blue-100 text-blue-800',
+      COMPLETADA: 'bg-green-100 text-green-800',
       CANCELADA: 'bg-red-100 text-red-800',
     };
-    return colors[estado] || 'bg-gray-100 text-gray-800';
+    return colors[estado] || 'bg-green-100 text-green-800';
   };
 
   return (

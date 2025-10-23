@@ -208,7 +208,7 @@ const CierreCajaPage: React.FC = () => {
     <div className="p-6 max-w-7xl mx-auto">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">Cierre de Caja</h1>
+        <h1 className="text-3xl font-bold text-gray-900">Cierre y apertura de Caja</h1>
         <p className="text-gray-600 mt-1">Cuadre diario de efectivo y control de diferencias</p>
       </div>
 

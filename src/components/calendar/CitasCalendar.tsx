@@ -58,12 +58,12 @@ export const CitasCalendar: React.FC<CitasCalendarProps> = ({
 
     switch (cita.estado) {
       case 'CONFIRMADA':
-        backgroundColor = '#10b981'; // green-600
-        borderColor = '#059669'; // green-700
+        backgroundColor = '#3B82F6'; // blue-600
+        borderColor = '#2563EB'; // blue-700
         break;
       case 'COMPLETADA':
-        backgroundColor = '#6b7280'; // gray-600
-        borderColor = '#4b5563'; // gray-700
+        backgroundColor = '#10b981'; // green-600
+        borderColor = '#059669'; // green-700
         break;
       case 'CANCELADA':
         backgroundColor = '#ef4444'; // red-600
@@ -120,7 +120,7 @@ export const CitasCalendar: React.FC<CitasCalendarProps> = ({
         onView={onViewChange}
         date={date}
         onNavigate={onNavigate}
-        min={new Date(0, 0, 0, 8, 0, 0)} // 8:00 AM
+        min={new Date(0, 0, 0, 9, 0, 0)} // 8:00 AM
         max={new Date(0, 0, 0, 21, 0, 0)} // 8:00 PM
         step={15} // Intervalos de 15 minutos
         timeslots={4} // 4 slots por hora (15 min cada uno)

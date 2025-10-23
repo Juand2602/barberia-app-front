@@ -34,8 +34,8 @@ export const CambiarEstadoModal: React.FC<CambiarEstadoModalProps> = ({
   const getEstadoColor = (estado: EstadoCita) => {
     const colors = {
       PENDIENTE: 'bg-yellow-100 border-yellow-300 text-yellow-800',
-      CONFIRMADA: 'bg-green-100 border-green-300 text-green-800',
-      COMPLETADA: 'bg-gray-100 border-gray-300 text-gray-800',
+      CONFIRMADA: 'bg-blue-100 border-blue-300 text-green-800',
+      COMPLETADA: 'bg-green-100 border-green-300 text-gray-800',
       CANCELADA: 'bg-red-100 border-red-300 text-red-800',
     };
     return colors[estado];

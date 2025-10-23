@@ -34,7 +34,7 @@ export const CitaDetalle: React.FC<CitaDetalleProps> = ({
     const variants: any = {
       PENDIENTE: 'warning',
       CONFIRMADA: 'success',
-      COMPLETADA: 'default',
+      COMPLETADA: 'info',
       CANCELADA: 'danger',
     };
     return variants[estado] || 'default';
