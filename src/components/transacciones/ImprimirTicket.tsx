@@ -40,63 +40,73 @@ export const ImprimirTicket: React.FC<ImprimirTicketProps> = ({
     const ventana = window.open('', '_blank');
     if (!ventana) return;
 
+    // --- ESTILOS CENTRALIZADOS Y CORREGIDOS CON CONTENEDOR CENTRADO ---
+    const printStyles = `
+      <style>
+        body { 
+          font-family: 'Courier New', monospace; 
+          font-size: 12px; 
+          line-height: 1.4;
+          width: 576px; /* Ancho exacto para impresora de 80mm (se mantiene) */
+          margin: 0;
+          padding: 0; /* Quitamos el padding del body principal */
+          box-sizing: border-box;
+        }
+        /* --- NUEVO CONTENEDOR CENTRADO --- */
+        .ticket-container {
+          width: 80%; /* O un valor fijo como 520px */
+          max-width: 440px; /* Evita que sea demasiado ancho en pantallas grandes */
+          margin: 0 auto; /* ¡Esta es la magia para centrarlo! */
+          padding: 5mm; /* El padding ahora va aquí */
+          box-sizing: border-box;
+        }
+        .header { 
+          text-align: center; 
+          border-bottom: 1px dashed #000; 
+          padding-bottom: 10px; 
+          margin-bottom: 10px; 
+        }
+        .title { 
+          font-size: 16px; 
+          font-weight: bold; 
+        }
+        .subtitle { 
+          font-size: 10px; 
+        }
+        .section { 
+          margin: 10px 0; 
+        }
+        .item { 
+          display: flex; 
+          justify-content: space-between; 
+          margin: 2px 0; 
+        }
+        .total-section { 
+          border-top: 1px dashed #000; 
+          padding-top: 10px; 
+          margin-top: 10px; 
+        }
+        .footer { 
+          text-align: center; 
+          border-top: 1px dashed #000; 
+          padding-top: 10px; 
+          margin-top: 10px; 
+          font-size: 10px; 
+        }
+      </style>
+    `;
+
     ventana.document.write(`
       <!DOCTYPE html>
       <html>
         <head>
           <title>Ticket de Venta #${transaccion.id}</title>
-          <style>
-            body { 
-              font-family: 'Courier New', monospace; 
-              font-size: 12px; 
-              line-height: 1.4;
-              max-width: 300px; 
-              margin: 0 auto;
-              padding: 10px;
-            }
-            .header { 
-              text-align: center; 
-              border-bottom: 1px dashed #000; 
-              padding-bottom: 10px; 
-              margin-bottom: 10px; 
-            }
-            .title { 
-              font-size: 16px; 
-              font-weight: bold; 
-            }
-            .subtitle { 
-              font-size: 10px; 
-            }
-            .section { 
-              margin: 10px 0; 
-            }
-            .item { 
-              display: flex; 
-              justify-content: space-between; 
-              margin: 2px 0; 
-            }
-            .total-section { 
-              border-top: 1px dashed #000; 
-              padding-top: 10px; 
-              margin-top: 10px; 
-            }
-            .footer { 
-              text-align: center; 
-              border-top: 1px dashed #000; 
-              padding-top: 10px; 
-              margin-top: 10px; 
-              font-size: 10px; 
-            }
-            @media print {
-              body {
-                margin: 0;
-                padding: 5px;
-              }
-            }
-          </style>
+          ${printStyles}
         </head>
         <body>
-          ${contenido.innerHTML}
+          <div class="ticket-container">
+            ${contenido.innerHTML}
+          </div>
         </body>
       </html>
     `);
@@ -126,21 +136,28 @@ export const ImprimirTicket: React.FC<ImprimirTicketProps> = ({
           </Button>
         </div>
 
-        {/* Contenido del ticket */}
+        {/* Contenido del ticket para la vista previa */}
         <div 
           ref={ticketRef} 
-          className="bg-white p-4 border-2 border-dashed border-gray-300"
-          style={{ fontFamily: 'Courier New, monospace', fontSize: '12px', maxWidth: '300px', margin: '0 auto' }}
+          className="bg-white p-4 border-2 border-dashed border-gray-300 mx-auto"
+          // --- ESTILOS PARA LA VISTA PREVIA (simulando el contenedor centrado) ---
+          style={{ 
+            width: '80mm', 
+            fontFamily: 'Courier New, monospace', 
+            fontSize: '12px',
+            transform: 'scale(0.85)', 
+            transformOrigin: 'top center'
+          }}
         >
           {/* Header */}
-          <div className="header" style={{ textAlign: 'center', borderBottom: '1px dashed #000', paddingBottom: '10px', marginBottom: '10px' }}>
-            <div className="title" style={{ fontSize: '16px', fontWeight: 'bold' }}>LA BARBERÍA</div>
-            <div className="subtitle" style={{ fontSize: '10px' }}>Calle 45 #23-10, Bucaramanga</div>
-            <div className="subtitle" style={{ fontSize: '10px' }}>Ticket de Venta</div>
+          <div className="header">
+            <div className="title">LA BARBERÍA</div>
+            <div className="subtitle">Calle 45 #23-10, Bucaramanga</div>
+            <div className="subtitle">Ticket de Venta</div>
           </div>
           
           {/* Información de la venta */}
-          <div className="section" style={{ margin: '10px 0' }}>
+          <div className="section">
             <strong>Venta #{transaccion.id.slice(-8).toUpperCase()}</strong><br />
             Fecha: {formatDate(transaccion.fecha)}<br />
             {transaccion.empleado && `Barbero: ${transaccion.empleado.nombre}`}
@@ -148,7 +165,7 @@ export const ImprimirTicket: React.FC<ImprimirTicketProps> = ({
           
           {/* Cliente */}
           {transaccion.cliente && (
-            <div className="section" style={{ margin: '10px 0' }}>
+            <div className="section">
               <strong>CLIENTE:</strong><br />
               {transaccion.cliente.nombre}<br />
               {transaccion.cliente.telefono && `Tel: ${transaccion.cliente.telefono}`}
@@ -157,17 +174,17 @@ export const ImprimirTicket: React.FC<ImprimirTicketProps> = ({
           
           {/* Cita */}
           {transaccion.cita && (
-            <div className="section" style={{ margin: '10px 0' }}>
+            <div className="section">
               <strong>CITA:</strong> {transaccion.cita.radicado}
             </div>
           )}
           
           {/* Productos/Servicios */}
-          <div className="section" style={{ margin: '10px 0' }}>
+          <div className="section">
             <strong>SERVICIOS:</strong>
             {transaccion.items.map((item, idx) => (
               <div key={idx} style={{ margin: '5px 0' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <div className="item">
                   <div>
                     {item.servicio.nombre}<br />
                     <span style={{ fontSize: '10px' }}>
@@ -181,25 +198,25 @@ export const ImprimirTicket: React.FC<ImprimirTicketProps> = ({
           </div>
           
           {/* Total */}
-          <div className="total-section" style={{ borderTop: '1px dashed #000', paddingTop: '10px', marginTop: '10px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', margin: '2px 0' }}>
+          <div className="total-section">
+            <div className="item">
               <span>Subtotal:</span>
               <span>{formatCurrency(transaccion.total)}</span>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', margin: '2px 0' }}>
+            <div className="item">
               <span>Descuento:</span>
               <span>{formatCurrency(0)}</span>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', margin: '5px 0', fontWeight: 'bold', fontSize: '14px' }}>
+            <div className="item" style={{ fontWeight: 'bold', fontSize: '14px' }}>
               <strong>TOTAL:</strong>
               <strong>{formatCurrency(transaccion.total)}</strong>
             </div>
           </div>
           
           {/* Pago */}
-          <div className="section" style={{ margin: '10px 0' }}>
+          <div className="section">
             <strong>PAGO:</strong>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <div className="item">
               <span>{transaccion.metodoPago}:</span>
               <span>{formatCurrency(transaccion.total)}</span>
             </div>
@@ -212,14 +229,14 @@ export const ImprimirTicket: React.FC<ImprimirTicketProps> = ({
           
           {/* Notas */}
           {transaccion.notas && (
-            <div className="section" style={{ margin: '10px 0' }}>
+            <div className="section">
               <strong>NOTAS:</strong><br />
               <span style={{ fontSize: '10px' }}>{transaccion.notas}</span>
             </div>
           )}
           
           {/* Footer */}
-          <div className="footer" style={{ textAlign: 'center', borderTop: '1px dashed #000', paddingTop: '10px', marginTop: '10px', fontSize: '10px' }}>
+          <div className="footer">
             ¡Gracias por tu visita!<br />
             Esperamos verte pronto
           </div>

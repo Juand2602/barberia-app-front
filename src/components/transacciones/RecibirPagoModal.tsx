@@ -84,12 +84,18 @@ export const RecibirPagoModal: React.FC<RecibirPagoModalProps> = ({
           nombreServicio: item.servicio.nombre,
         }))
       );
-
-      // ✅ ESTABLECER EL EMPLEADO PREDETERMINADO
-      const empleadoId = getEmpleadoPredeterminado();
-      setValue('empleadoId', empleadoId);
     }
   }, [isOpen, transaccion]);
+
+  // ✅ ESTABLECER EL EMPLEADO PREDETERMINADO después de cargar empleados
+  useEffect(() => {
+    if (isOpen && empleados.length > 0) {
+      const empleadoId = getEmpleadoPredeterminado();
+      if (empleadoId) {
+        setValue('empleadoId', empleadoId);
+      }
+    }
+  }, [isOpen, empleados, transaccion]);
 
   const loadData = async () => {
     try {
