@@ -1,5 +1,7 @@
 // src/types/reporte.types.ts
 
+import { EstadoPago } from './transaccion.types';
+
 export interface PeriodoReporte {
   inicio: Date;
   fin: Date;
@@ -55,6 +57,7 @@ export interface ReporteVentas {
     empleado: string;
     servicios: string;
     metodoPago: string;
+    estadoPago: EstadoPago;  // ✅ AGREGADO
     total: number;
   }>;
 }

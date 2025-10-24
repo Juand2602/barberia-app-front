@@ -175,10 +175,14 @@ const ReportesPage: React.FC = () => {
     );
     pdf.addTable(headersMetodo, dataMetodo);
     
-    // Detalle de transacciones
-    pdf.addSection("Detalle de Transacciones");
+    // Detalle de transacciones - FILTRAR SOLO PAGADAS
+    const transaccionesPagadas = reporteVentas.transacciones.filter(
+      t => t.estadoPago === 'PAGADO'
+    );
+    
+    pdf.addSection("Detalle de Transacciones Pagadas");
     const headersTrans = ["Fecha", "Cliente", "Empleado", "Servicios", "Método", "Total"];
-    const dataTrans = reporteVentas.transacciones.map(t => [
+    const dataTrans = transaccionesPagadas.map(t => [
       format(new Date(t.fecha), "dd/MM/yyyy HH:mm", { locale: es }),
       t.cliente,
       t.empleado,
@@ -462,7 +466,7 @@ const ReportesPage: React.FC = () => {
                   </h3>
                   <p className="text-sm text-gray-600">Total en Ventas</p>
                   <p className="text-xs text-gray-500 mt-1">
-                    {dashboard.ventas.cantidad} transacciones
+                    {dashboard.ventas.cantidad} transacciones pagadas
                   </p>
                 </Card>
 
@@ -553,6 +557,7 @@ const ReportesPage: React.FC = () => {
                   <p className="text-2xl font-bold text-gray-900">
                     {formatCurrency(reporteVentas.resumen.totalIngresos)}
                   </p>
+                  <p className="text-xs text-gray-500 mt-1">Solo transacciones pagadas</p>
                 </Card>
                 <Card className="p-6">
                   <h3 className="text-sm text-gray-600 mb-2">
@@ -561,6 +566,7 @@ const ReportesPage: React.FC = () => {
                   <p className="text-2xl font-bold text-gray-900">
                     {reporteVentas.resumen.cantidadVentas}
                   </p>
+                  <p className="text-xs text-gray-500 mt-1">Transacciones pagadas</p>
                 </Card>
                 <Card className="p-6">
                   <h3 className="text-sm text-gray-600 mb-2">
@@ -603,11 +609,11 @@ const ReportesPage: React.FC = () => {
                 </div>
               </Card>
 
-              {/* Tabla de transacciones */}
+              {/* Tabla de transacciones - FILTRAR SOLO PAGADAS */}
               <Card>
                 <div className="p-6">
                   <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                    Detalle de Transacciones
+                    Detalle de Transacciones Pagadas
                   </h3>
                   <div className="overflow-x-auto">
                     <table className="w-full">
@@ -634,7 +640,9 @@ const ReportesPage: React.FC = () => {
                         </tr>
                       </thead>
                       <tbody>
-                        {reporteVentas.transacciones.map((t) => (
+                        {reporteVentas.transacciones
+                          .filter(t => t.estadoPago === 'PAGADO')
+                          .map((t) => (
                           <tr key={t.id} className="border-b hover:bg-gray-50">
                             <td className="py-3 px-4 text-sm text-gray-900">
                               {format(new Date(t.fecha), "dd/MM/yyyy HH:mm", {
@@ -679,7 +687,7 @@ const ReportesPage: React.FC = () => {
             <Card>
               <div className="p-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                  Desempeño por Empleado
+                  Desempeño por Empleado (Solo Ventas Pagadas)
                 </h3>
                 <div className="space-y-4">
                   {reporteVentasPorEmpleado.empleados.map((empleado, index) => (
@@ -726,7 +734,7 @@ const ReportesPage: React.FC = () => {
             <Card>
               <div className="p-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                  Análisis por Servicio
+                  Análisis por Servicio (Solo Ventas Pagadas)
                 </h3>
                 <div className="overflow-x-auto">
                   <table className="w-full">
@@ -868,6 +876,7 @@ const ReportesPage: React.FC = () => {
                   <p className="text-2xl font-bold text-green-600">
                     {formatCurrency(reporteFinanciero.resumen.totalIngresos)}
                   </p>
+                  <p className="text-xs text-gray-500 mt-1">Solo pagadas</p>
                 </Card>
                 <Card className="p-6">
                   <h3 className="text-sm text-gray-600 mb-2">Egresos</h3>
