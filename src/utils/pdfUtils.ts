@@ -357,7 +357,7 @@ export class PDFGenerator {
     // Texto del pie de página
     this.doc.setFontSize(8);
     this.doc.setTextColor(150, 150, 150);
-    this.doc.text('Barberia - Sistema de Gestión', this.pageWidth / 2, footerY, { align: 'center' });
+    this.doc.text('Madison MVP Barberia - Sistema de Gestión', this.pageWidth / 2, footerY, { align: 'center' });
     this.doc.text(`Página ${this.doc.getCurrentPageInfo().pageNumber}`, this.pageWidth - this.margin, footerY, { align: 'right' });
   }
 
