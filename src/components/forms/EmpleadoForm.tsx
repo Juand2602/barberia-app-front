@@ -15,7 +15,7 @@ interface EmpleadoFormProps {
 const especialidadesDisponibles = [
   'Corte de cabello',
   'Barba',
-  'Diseño',
+  'Cejas',
   'Afeitado',
   'Tinte',
   'Permanente',

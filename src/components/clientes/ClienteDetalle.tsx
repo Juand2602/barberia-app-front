@@ -1,10 +1,10 @@
-import React from 'react';
-import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
-import { Phone, Mail } from 'lucide-react';
-import { Cliente } from '@/types/cliente.types';
-import { Badge } from '@components/ui/Badge';
-import { Button } from '@components/ui/Button';
+import React from "react";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
+import { Phone, Mail } from "lucide-react";
+import { Cliente } from "@/types/cliente.types";
+import { Badge } from "@components/ui/Badge";
+import { Button } from "@components/ui/Button";
 
 interface ClienteDetalleProps {
   cliente: Cliente;
@@ -16,7 +16,11 @@ export const ClienteDetalle: React.FC<ClienteDetalleProps> = ({
   cliente,
   onCerrar,
 }) => {
-  const fechaRegistro = cliente.fechaRegistro ? new Date(cliente.fechaRegistro) : cliente.createdAt ? new Date(cliente.createdAt) : null;
+  const fechaRegistro = cliente.fechaRegistro
+    ? new Date(cliente.fechaRegistro)
+    : cliente.createdAt
+      ? new Date(cliente.createdAt)
+      : null;
 
   return (
     <div className="space-y-6">
@@ -25,11 +29,13 @@ export const ClienteDetalle: React.FC<ClienteDetalleProps> = ({
         <div>
           <h2 className="text-2xl font-bold text-gray-900">{cliente.nombre}</h2>
           <div className="flex gap-2 mt-2 items-center">
-            <Badge variant={cliente.activo ? 'success' : 'danger'}>
-              {cliente.activo ? 'Activo' : 'Inactivo'}
+            <Badge variant={cliente.activo ? "success" : "danger"}>
+              {cliente.activo ? "Activo" : "Inactivo"}
             </Badge>
             {fechaRegistro && (
-              <span className="text-sm text-gray-500">Registro: {format(fechaRegistro, 'dd/MM/yyyy', { locale: es })}</span>
+              <span className="text-sm text-gray-500">
+                Registro: {format(fechaRegistro, "dd/MM/yyyy", { locale: es })}
+              </span>
             )}
           </div>
         </div>
@@ -42,7 +48,7 @@ export const ClienteDetalle: React.FC<ClienteDetalleProps> = ({
             <Phone className="text-blue-600" size={18} />
             <h3 className="font-semibold text-gray-900">Teléfono</h3>
           </div>
-          <p className="font-medium text-gray-900">{cliente.telefono || '-'}</p>
+          <p className="font-medium text-gray-900">{cliente.telefono || "-"}</p>
         </div>
 
         <div className="bg-gray-50 p-4 rounded-lg">
@@ -50,7 +56,7 @@ export const ClienteDetalle: React.FC<ClienteDetalleProps> = ({
             <Mail className="text-purple-600" size={18} />
             <h3 className="font-semibold text-gray-900">Email</h3>
           </div>
-          <p className="font-medium text-gray-900">{cliente.email || '-'}</p>
+          <p className="font-medium text-gray-900">{cliente.email || "-"}</p>
         </div>
       </div>
 
@@ -58,7 +64,9 @@ export const ClienteDetalle: React.FC<ClienteDetalleProps> = ({
       {cliente.notas && (
         <div className="border-t pt-4">
           <h3 className="font-semibold text-gray-900 mb-2">Notas</h3>
-          <p className="text-gray-700 bg-gray-50 p-3 rounded-lg">{cliente.notas}</p>
+          <p className="text-gray-700 bg-gray-50 p-3 rounded-lg">
+            {cliente.notas}
+          </p>
         </div>
       )}
 
@@ -66,26 +74,36 @@ export const ClienteDetalle: React.FC<ClienteDetalleProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="bg-gray-50 p-4 rounded-lg">
           <p className="text-sm text-gray-600 mb-1">Citas</p>
-          <p className="text-2xl font-bold text-gray-900">{cliente._count?.citas ?? 0}</p>
+          <p className="text-2xl font-bold text-gray-900">
+            {cliente._count?.citas ?? 0}
+          </p>
         </div>
-
       </div>
 
       {/* Metadata */}
       <div className="border-t pt-4 text-xs text-gray-500">
         <p>
-          ID: <code className="bg-gray-100 px-1 py-0.5 rounded">{cliente.id}</code>
+          ID:{" "}
+          <code className="bg-gray-100 px-1 py-0.5 rounded">{cliente.id}</code>
         </p>
         {cliente.createdAt && (
-          <p className="mt-1">Creado: {format(new Date(cliente.createdAt), "d/MM/yyyy HH:mm", { locale: es })}</p>
+          <p className="mt-1">
+            Creado:{" "}
+            {format(new Date(cliente.createdAt), "d/MM/yyyy HH:mm", {
+              locale: es,
+            })}
+          </p>
         )}
       </div>
 
       {/* Acciones */}
       <div className="border-t pt-4 flex justify-between">
-        <Button variant="ghost" onClick={onCerrar}>
-          Cerrar
-        </Button>
+        <div />
+        <div className="flex gap-2">
+          <Button variant="ghost" onClick={onCerrar}>
+            Cerrar
+          </Button>
+        </div>
       </div>
     </div>
   );

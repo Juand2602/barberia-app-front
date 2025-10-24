@@ -1,26 +1,28 @@
-import React, { useEffect, useState } from 'react';
-import { Plus, Search } from 'lucide-react';
-import { useClientesStore } from '@stores/clientesStore';
-import { clientesService } from '@services/clientes.service';
-import { Cliente, CreateClienteDTO } from '@/types/cliente.types';
-import { Card } from '@components/ui/Card';
-import { Button } from '@components/ui/Button';
-import { Input } from '@components/ui/Input';
-import { Modal } from '@components/ui/Modal';
-import { ClientesTable } from '@components/tables/ClientesTable';
-import { ClienteForm } from '@components/forms/ClienteForm';
-import { ClienteDetalle } from '@components/clientes/ClienteDetalle';
+import React, { useEffect, useState } from "react";
+import { Plus, Search } from "lucide-react";
+import { useClientesStore } from "@stores/clientesStore";
+import { clientesService } from "@services/clientes.service";
+import { Cliente, CreateClienteDTO } from "@/types/cliente.types";
+import { Card } from "@components/ui/Card";
+import { Button } from "@components/ui/Button";
+import { Input } from "@components/ui/Input";
+import { Modal } from "@components/ui/Modal";
+import { ClientesTable } from "@components/tables/ClientesTable";
+import { ClienteForm } from "@components/forms/ClienteForm";
+import { ClienteDetalle } from "@components/clientes/ClienteDetalle";
 
 export const ClientesPage: React.FC = () => {
-  const { clientes, loading, fetchClientes, searchTerm, setSearchTerm } = useClientesStore();
-  
+  const { clientes, loading, fetchClientes, searchTerm, setSearchTerm } =
+    useClientesStore();
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCliente, setEditingCliente] = useState<Cliente | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // detalle modal
   const [isDetalleOpen, setIsDetalleOpen] = useState(false);
-  const [clienteSeleccionado, setClienteSeleccionado] = useState<Cliente | null>(null);
+  const [clienteSeleccionado, setClienteSeleccionado] =
+    useState<Cliente | null>(null);
 
   useEffect(() => {
     fetchClientes();
@@ -47,9 +49,9 @@ export const ClientesPage: React.FC = () => {
     try {
       await clientesService.delete(cliente.id);
       fetchClientes(searchTerm);
-      alert('Cliente desactivado exitosamente');
+      alert("Cliente desactivado exitosamente");
     } catch (error: any) {
-      alert(error.response?.data?.message || 'Error al desactivar cliente');
+      alert(error.response?.data?.message || "Error al desactivar cliente");
     }
   };
 
@@ -58,16 +60,16 @@ export const ClientesPage: React.FC = () => {
     try {
       if (editingCliente) {
         await clientesService.update(editingCliente.id, data);
-        alert('Cliente actualizado exitosamente');
+        alert("Cliente actualizado exitosamente");
       } else {
         await clientesService.create(data);
-        alert('Cliente creado exitosamente');
+        alert("Cliente creado exitosamente");
       }
       setIsModalOpen(false);
       setEditingCliente(null);
       fetchClientes(searchTerm);
     } catch (error: any) {
-      alert(error.response?.data?.message || 'Error al guardar cliente');
+      alert(error.response?.data?.message || "Error al guardar cliente");
     } finally {
       setIsSubmitting(false);
     }
@@ -86,9 +88,16 @@ export const ClientesPage: React.FC = () => {
       {/* Toolbar */}
       <Card className="mb-6">
         <div className="flex justify-between items-center gap-4">
+          <div className="text-sm text-gray-600">
+            Total de clientes:{" "}
+            <span className="font-semibold">{clientes.length}</span>
+          </div>
           <div className="flex-1 max-w-md">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+              <Search
+                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                size={20}
+              />
               <Input
                 type="text"
                 placeholder="Buscar por nombre, teléfono o email..."
@@ -129,15 +138,19 @@ export const ClientesPage: React.FC = () => {
           setIsModalOpen(false);
           setEditingCliente(null);
         }}
-        title={editingCliente ? 'Editar Cliente' : 'Nuevo Cliente'}
+        title={editingCliente ? "Editar Cliente" : "Nuevo Cliente"}
       >
         <ClienteForm
-          initialData={editingCliente ? {
-            nombre: editingCliente.nombre,
-            telefono: editingCliente.telefono,
-            email: editingCliente.email || '',
-            notas: editingCliente.notas || '',
-          } : undefined}
+          initialData={
+            editingCliente
+              ? {
+                  nombre: editingCliente.nombre,
+                  telefono: editingCliente.telefono,
+                  email: editingCliente.email || "",
+                  notas: editingCliente.notas || "",
+                }
+              : undefined
+          }
           onSubmit={handleSubmit}
           onCancel={() => {
             setIsModalOpen(false);

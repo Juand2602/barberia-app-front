@@ -65,7 +65,7 @@ export const ImprimirTicket: React.FC<ImprimirTicketProps> = ({
           margin-bottom: 0px; /* reducido */
         }
         .logo-container img {
-          width: 70px; /* un poco más pequeño para evitar empujar */
+          width: 50px; /* un poco más pequeño para evitar empujar */
           height: auto;
           margin: 0 auto;
           display: block;
@@ -168,7 +168,7 @@ export const ImprimirTicket: React.FC<ImprimirTicketProps> = ({
             <img 
               src="/logo.png" 
               alt="M Barberia" 
-              style={{ width: '70px', height: 'auto', margin: '0 auto', display: 'block' }} /* tamaño reducido y display block */
+              style={{ width: '80px', height: 'auto', margin: '0 auto', display: 'block' }} /* tamaño reducido y display block */
               onError={(e) => {
                 // Si falla al cargar, ocultar la imagen
                 (e.target as HTMLImageElement).style.display = 'none';
@@ -186,9 +186,13 @@ export const ImprimirTicket: React.FC<ImprimirTicketProps> = ({
               marginBottom: '4px'  /* reducido */
             }}
           >
-            <div className="title" style={{ marginTop: '2px' }}>M BARBERIA</div>
+            <div className="title" style={{ marginTop: '4px' }}>Madison MVP Barbería</div>
+            <div className="subtitle">NIT: 90 123 4567</div>
+            <div className="subtitle">Centro Comercial Acropolis, Local 108, Entrada trasera</div>
             <div className="subtitle">Bucaramanga, Santander</div>
             <div className="subtitle">Tel: 300 123 4567</div>
+            <div className="subtitle">Correo: madisonmvp@gmail.com</div>
+            <div className="subtitle">Regimen: Regimen común</div>
             <div className="subtitle">Ticket de Venta</div>
           </div>
           

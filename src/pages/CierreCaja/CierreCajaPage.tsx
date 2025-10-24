@@ -51,6 +51,9 @@ const CierreCajaPage: React.FC = () => {
   // Apertura detalle modal (similar al detalle de cierre)
   const [aperturaSeleccionada, setAperturaSeleccionada] = useState<any | null>(null);
   const [isAperturaDetalleOpen, setIsAperturaDetalleOpen] = useState(false);
+  
+  // Estado para controlar la carga inicial
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
 
   useEffect(() => {
     loadData();
@@ -58,12 +61,26 @@ const CierreCajaPage: React.FC = () => {
   }, []);
 
   const loadData = async () => {
-    fetchCierres();
-    fetchEstadisticas();
-    fetchAperturas();
-    fetchAperturasEstadisticas();
-    await verificarPuedeCerrar();
-    await fetchAperturaAbierta();
+    setIsInitialLoading(true);
+    try {
+      // Cargar datos en paralelo
+      await Promise.all([
+        fetchCierres(),
+        fetchEstadisticas(),
+        fetchAperturas(),
+        fetchAperturasEstadisticas()
+      ]);
+      
+      // Luego cargar los datos que dependen de los anteriores
+      await Promise.all([
+        verificarPuedeCerrar(),
+        fetchAperturaAbierta()
+      ]);
+    } catch (error) {
+      console.error('Error al cargar datos:', error);
+    } finally {
+      setIsInitialLoading(false);
+    }
   };
 
   const fetchAperturaAbierta = async () => {
@@ -204,6 +221,17 @@ const CierreCajaPage: React.FC = () => {
     }).format(amount);
   };
 
+  if (isInitialLoading) {
+    return (
+      <div className="p-6 max-w-7xl mx-auto flex items-center justify-center h-screen">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
+          <p className="text-gray-600">Cargando información de caja...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-6 max-w-7xl mx-auto">
       {/* Header */}
@@ -307,7 +335,7 @@ const CierreCajaPage: React.FC = () => {
             {!loadingApertura && !aperturaAbierta && (
               <Button
                 onClick={handleAbrirCaja}
-                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700"
+                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 transition-opacity duration-300"
               >
                 Abrir caja
               </Button>
@@ -324,7 +352,7 @@ const CierreCajaPage: React.FC = () => {
             {puedeCerrar ? (
               <Button
                 onClick={handleNuevoCierre}
-                className="flex items-center gap-2 bg-green-600 hover:bg-green-700"
+                className="flex items-center gap-2 bg-green-600 hover:bg-green-700 transition-opacity duration-300"
               >
                 <Plus size={20} />
                 Realizar Cierre
