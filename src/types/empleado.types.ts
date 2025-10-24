@@ -115,11 +115,13 @@ export interface PagoComision {
   updatedAt: string;
 }
 
+// src/types/empleado.types.ts - Actualizar el tipo RegistrarPagoComisionDTO
+
 export interface RegistrarPagoComisionDTO {
   empleadoId: string;
   periodo: string;
-  fechaInicio: Date;
-  fechaFin: Date;
+  fechaInicio: Date; // ✅ Cambiar de string a Date
+  fechaFin: Date;    // ✅ Cambiar de string a Date
   metodoPago: 'EFECTIVO' | 'TRANSFERENCIA';
   referencia?: string;
   notas?: string;

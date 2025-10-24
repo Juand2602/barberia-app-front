@@ -1,10 +1,9 @@
-// src/services/comisiones.service.ts
-
+// src/services/comisiones.service.ts (FRONTEND)
 import { api } from './api';
-import { 
-  ComisionPendiente, 
-  PagoComision, 
-  RegistrarPagoComisionDTO 
+import {
+  ComisionPendiente,
+  PagoComision,
+  RegistrarPagoComisionDTO
 } from '../types/empleado.types';
 
 export const comisionesService = {
@@ -39,9 +38,16 @@ export const comisionesService = {
     empleadoId: string,
     data: RegistrarPagoComisionDTO
   ): Promise<PagoComision> {
+    // ✅ Convertir las fechas a ISO string antes de enviar
+    const payload = {
+      ...data,
+      fechaInicio: data.fechaInicio.toISOString(),
+      fechaFin: data.fechaFin.toISOString(),
+    };
+
     const response = await api.post(
       `/comisiones/empleado/${empleadoId}/pagar`,
-      data
+      payload
     );
     return response.data.data;
   },

@@ -1,7 +1,7 @@
 // src/components/tables/EmpleadosTable.tsx
 
 import React from 'react';
-import { Eye, Edit2, Trash2, DollarSign } from 'lucide-react';
+import { Eye, Edit2, Trash2, DollarSign, Calendar } from 'lucide-react';
 import { Empleado } from '@/types/empleado.types';
 import { Button } from '@components/ui/Button';
 import { Badge } from '@components/ui/Badge';
@@ -23,6 +23,19 @@ export const EmpleadosTable: React.FC<EmpleadosTableProps> = ({
   onDelete,
   onVerComisiones, // ✅ NUEVO
 }) => {
+  // Función para obtener los días laborales del empleado
+  const getDiasLaborales = (empleado: Empleado): string[] => {
+    const dias: string[] = [];
+    if (empleado.horarioLunes) dias.push('L');
+    if (empleado.horarioMartes) dias.push('M');
+    if (empleado.horarioMiercoles) dias.push('X');
+    if (empleado.horarioJueves) dias.push('J');
+    if (empleado.horarioViernes) dias.push('V');
+    if (empleado.horarioSabado) dias.push('S');
+    if (empleado.horarioDomingo) dias.push('D');
+    return dias;
+  };
+
   if (empleados.length === 0) {
     return (
       <div className="text-center py-12">
@@ -46,7 +59,7 @@ export const EmpleadosTable: React.FC<EmpleadosTableProps> = ({
               Teléfono
             </th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Especialidades
+              Días Laborales
             </th>
             {/* ✅ NUEVA COLUMNA */}
             <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -75,18 +88,17 @@ export const EmpleadosTable: React.FC<EmpleadosTableProps> = ({
               <td className="px-6 py-4 whitespace-nowrap">
                 <div className="text-sm text-gray-900">{empleado.telefono}</div>
               </td>
-              <td className="px-6 py-4">
-                <div className="flex flex-wrap gap-1">
-                  {empleado.especialidades.slice(0, 2).map((esp, idx) => (
-                    <Badge key={idx} variant="info" className="text-xs">
-                      {esp}
-                    </Badge>
+              {/* Columna de Días Laborales reemplazando a Especialidades */}
+              <td className="px-6 py-4 whitespace-nowrap">
+                <div className="flex gap-1">
+                  {getDiasLaborales(empleado).map((dia, idx) => (
+                    <span
+                      key={idx}
+                      className="inline-flex items-center justify-center w-6 h-6 text-xs font-medium bg-green-100 text-green-800 rounded"
+                    >
+                      {dia}
+                    </span>
                   ))}
-                  {empleado.especialidades.length > 2 && (
-                    <Badge variant="default" className="text-xs">
-                      +{empleado.especialidades.length - 2}
-                    </Badge>
-                  )}
                 </div>
               </td>
               {/* ✅ NUEVA COLUMNA - Porcentaje de Comisión */}
@@ -99,9 +111,12 @@ export const EmpleadosTable: React.FC<EmpleadosTableProps> = ({
                 </div>
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-center">
-                <span className="text-sm font-medium text-gray-900">
-                  {empleado._count?.citas || 0}
-                </span>
+                <div className="flex items-center justify-center">
+                  <Calendar size={14} className="mr-1" />
+                  <span className="text-sm font-medium text-gray-900">
+                    {empleado._count?.citas || 0}
+                  </span>
+                </div>
               </td>
               <td className="px-6 py-4 whitespace-nowrap">
                 {empleado.activo ? (

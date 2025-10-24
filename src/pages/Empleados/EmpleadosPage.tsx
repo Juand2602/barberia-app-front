@@ -119,41 +119,43 @@ export const EmpleadosPage: React.FC = () => {
   };
 
   // ✅ NUEVO: Confirmar pago de comisión
-  const handleConfirmarPago = async (data: {
-    metodoPago: 'EFECTIVO' | 'TRANSFERENCIA';
-    referencia?: string;
-    notas?: string;
-    ajuste: number;
-  }) => {
-    if (!empleadoComisiones || !comisionPendiente) return;
+ // Confirmar pago de comisión
+const handleConfirmarPago = async (data: {
+  metodoPago: 'EFECTIVO' | 'TRANSFERENCIA';
+  referencia?: string;
+  notas?: string;
+  ajuste: number;
+}) => {
+  if (!empleadoComisiones || !comisionPendiente) return;
 
-    try {
-      const hoy = new Date();
-      const inicio = startOfMonth(hoy);
-      const fin = endOfMonth(hoy);
-      const periodo = format(inicio, 'yyyy-MM');
+  try {
+    const hoy = new Date();
+    const inicio = startOfMonth(hoy);
+    const fin = endOfMonth(hoy);
+    const periodo = format(inicio, 'yyyy-MM');
 
-      await comisionesService.registrarPago(empleadoComisiones.id, {
-        empleadoId: empleadoComisiones.id,
-        periodo,
-        fechaInicio: inicio,
-        fechaFin: fin,
-        metodoPago: data.metodoPago,
-        referencia: data.referencia,
-        notas: data.notas,
-        ajuste: data.ajuste,
-      });
+    await comisionesService.registrarPago(empleadoComisiones.id, {
+      empleadoId: empleadoComisiones.id,
+      periodo,
+      fechaInicio: inicio, // ✅ Pasar Date directamente, el servicio lo convierte
+      fechaFin: fin,       // ✅ Pasar Date directamente, el servicio lo convierte
+      metodoPago: data.metodoPago,
+      referencia: data.referencia,
+      notas: data.notas,
+      ajuste: data.ajuste,
+    });
 
-      alert('Pago de comisión registrado exitosamente');
-      setIsPagoComisionOpen(false);
-      setComisionPendiente(null);
-      
-      // Reabrir el modal de comisiones para ver el historial actualizado
-      setIsComisionesOpen(true);
-    } catch (error: any) {
-      throw error;
-    }
-  };
+    alert('Pago de comisión registrado exitosamente');
+    setIsPagoComisionOpen(false);
+    setComisionPendiente(null);
+    
+    // Reabrir el modal de comisiones para ver el historial actualizado
+    setIsComisionesOpen(true);
+  } catch (error: any) {
+    alert(error.response?.data?.message || 'Error al registrar el pago');
+    console.error('Error completo:', error);
+  }
+};
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
