@@ -47,36 +47,34 @@ export const EgresoForm: React.FC<EgresoFormProps> = ({
   // Aseguramos el tipo correcto para metodoPago
   const metodoPago = (watch('metodoPago') ?? 'EFECTIVO') as MetodoPago;
 
- // dentro de src/components/forms/EgresoForm.tsx
-const handleFormSubmit = (data: any) => {
-  const totalNumber = typeof data.total === 'string' ? parseFloat(data.total) : Number(data.total);
+  const handleFormSubmit = (data: FormValues) => {
+    const totalNumber = typeof data.total === 'string' ? parseFloat(data.total) : Number(data.total);
 
-  const transaccion: CreateTransaccionDTO = {
-    tipo: 'EGRESO',
-    concepto: data.concepto,
-    categoria: data.categoria,
-    total: totalNumber,
-    metodoPago: data.metodoPago as 'EFECTIVO' | 'TRANSFERENCIA',
-    referencia: data.metodoPago === 'TRANSFERENCIA' ? data.referencia : undefined,
-    notas: data.notas || undefined,
-    // ENVIAMOS items vacío: el backend creará el servicio __GASTO__ y reemplazará items
-    items: [], 
+    const transaccion: CreateTransaccionDTO = {
+      tipo: 'EGRESO',
+      concepto: data.concepto,
+      categoria: data.categoria,
+      total: totalNumber,
+      metodoPago: data.metodoPago,
+      // La referencia es opcional, independientemente del método de pago
+      referencia: data.referencia || undefined,
+      notas: data.notas || undefined,
+      items: [], 
+    };
+
+    onSubmit(transaccion);
   };
-
-  onSubmit(transaccion);
-};
-
 
   return (
     <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
       {/* Concepto */}
       <Input
         label="Concepto del Gasto *"
-        {...register('concepto', {
-          required: 'El concepto es requerido',
+        {...register("concepto", {
+          required: "El concepto es requerido",
           minLength: {
             value: 3,
-            message: 'El concepto debe tener al menos 3 caracteres',
+            message: "El concepto debe tener al menos 3 caracteres",
           },
         })}
         error={errors.concepto?.message as string}
@@ -89,7 +87,7 @@ const handleFormSubmit = (data: any) => {
           Categoría *
         </label>
         <select
-          {...register('categoria', { required: 'La categoría es requerida' })}
+          {...register("categoria", { required: "La categoría es requerida" })}
           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           <option value="">Seleccionar categoría</option>
@@ -100,7 +98,9 @@ const handleFormSubmit = (data: any) => {
           ))}
         </select>
         {errors.categoria && (
-          <p className="mt-1 text-sm text-red-600">{errors.categoria.message as string}</p>
+          <p className="mt-1 text-sm text-red-600">
+            {errors.categoria.message as string}
+          </p>
         )}
       </div>
 
@@ -109,12 +109,12 @@ const handleFormSubmit = (data: any) => {
         label="Monto *"
         type="number"
         step="1000"
-        {...register('total', {
-          required: 'El monto es requerido',
+        {...register("total", {
+          required: "El monto es requerido",
           valueAsNumber: true,
           min: {
             value: 1,
-            message: 'El monto debe ser mayor a 0',
+            message: "El monto debe ser mayor a 0",
           },
         })}
         error={errors.total?.message}
@@ -131,16 +131,16 @@ const handleFormSubmit = (data: any) => {
             className={`
               flex items-center justify-center gap-2 p-4 border-2 rounded-lg cursor-pointer transition-colors
               ${
-                metodoPago === 'EFECTIVO'
-                  ? 'bg-green-50 border-green-500 text-green-900'
-                  : 'bg-white border-gray-300 hover:border-gray-400'
+                metodoPago === "EFECTIVO"
+                  ? "bg-green-50 border-green-500 text-green-900"
+                  : "bg-white border-gray-300 hover:border-gray-400"
               }
             `}
           >
             <input
               type="radio"
               value="EFECTIVO"
-              {...register('metodoPago')}
+              {...register("metodoPago")}
               className="w-4 h-4"
             />
             <span className="font-medium">Efectivo</span>
@@ -150,16 +150,16 @@ const handleFormSubmit = (data: any) => {
             className={`
               flex items-center justify-center gap-2 p-4 border-2 rounded-lg cursor-pointer transition-colors
               ${
-                metodoPago === 'TRANSFERENCIA'
-                  ? 'bg-purple-50 border-purple-500 text-purple-900'
-                  : 'bg-white border-gray-300 hover:border-gray-400'
+                metodoPago === "TRANSFERENCIA"
+                  ? "bg-purple-50 border-purple-500 text-purple-900"
+                  : "bg-white border-gray-300 hover:border-gray-400"
               }
             `}
           >
             <input
               type="radio"
               value="TRANSFERENCIA"
-              {...register('metodoPago')}
+              {...register("metodoPago")}
               className="w-4 h-4"
             />
             <span className="font-medium">Transferencia</span>
@@ -167,13 +167,11 @@ const handleFormSubmit = (data: any) => {
         </div>
       </div>
 
-      {/* Referencia (solo si es transferencia) */}
-      {metodoPago === 'TRANSFERENCIA' && (
+      {/* Referencia (solo si es transferencia) - ahora es opcional */}
+      {metodoPago === "TRANSFERENCIA" && (
         <Input
-          label="Número de Referencia *"
-          {...register('referencia', {
-            required: metodoPago === 'TRANSFERENCIA' ? 'La referencia es requerida' : false,
-          })}
+          label="Número de Referencia (opcional)"
+          {...register("referencia")}
           error={errors.referencia?.message as string}
           placeholder="123456789"
         />
@@ -185,7 +183,7 @@ const handleFormSubmit = (data: any) => {
           Notas (opcional)
         </label>
         <textarea
-          {...register('notas')}
+          {...register("notas")}
           rows={3}
           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           placeholder="Información adicional del gasto..."
@@ -194,11 +192,16 @@ const handleFormSubmit = (data: any) => {
 
       {/* Botones */}
       <div className="flex justify-end gap-3 pt-4 border-t">
-        <Button type="button" variant="ghost" onClick={onCancel} disabled={isLoading}>
+        <Button
+          type="button"
+          variant="ghost"
+          onClick={onCancel}
+          disabled={isLoading}
+        >
           Cancelar
         </Button>
         <Button type="submit" variant="primary" disabled={isLoading}>
-          {isLoading ? 'Registrando...' : 'Registrar Egreso'}
+          {isLoading ? "Registrando..." : "Registrar Egreso"}
         </Button>
       </div>
     </form>

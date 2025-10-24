@@ -1,7 +1,7 @@
 // src/pages/Transacciones/TransaccionesPage.tsx - COMPLETO Y CORREGIDO
 
 import React, { useEffect, useState } from 'react';
-import { Plus, TrendingUp, TrendingDown, Filter, Clock, CheckCircle, Calendar } from 'lucide-react';
+import { Plus, TrendingUp, TrendingDown, Filter, Clock, Calendar } from 'lucide-react';
 import { useTransaccionesStore } from '@stores/transaccionesStore';
 import { useEmpleadosStore } from '@stores/empleadosStore';
 import { transaccionesService } from '@services/transacciones.service';
@@ -188,7 +188,7 @@ export const TransaccionesPage: React.FC = () => {
 
       {/* Estadísticas */}
       {estadisticas && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <Card className="!p-0">
             <div className="p-6">
               <div className="flex items-center justify-between">
@@ -262,25 +262,6 @@ export const TransaccionesPage: React.FC = () => {
                 </div>
                 <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
                   <Clock className="text-yellow-600" size={24} />
-                </div>
-              </div>
-            </div>
-          </Card>
-
-          <Card className="!p-0">
-            <div className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600 mb-1">Cobrado</p>
-                  <p className="text-2xl font-bold text-blue-600">
-                    {formatCurrency(estadisticas.totalPagado || 0)}
-                  </p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    {estadisticas.totalTransaccionesPagadas || 0} pagadas
-                  </p>
-                </div>
-                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <CheckCircle className="text-blue-600" size={24} />
                 </div>
               </div>
             </div>

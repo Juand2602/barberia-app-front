@@ -154,7 +154,7 @@ export const IngresoForm: React.FC<IngresoFormProps> = ({
       empleadoId: data.empleadoId || undefined,
       total: calcularTotal(),
       metodoPago: data.metodoPago,
-      referencia: data.metodoPago === 'TRANSFERENCIA' ? data.referencia : undefined,
+      referencia: data.referencia || undefined,
       notas: data.notas || undefined,
       items: items.map(({ servicioId, cantidad, precioUnitario, subtotal }) => ({
         servicioId,
@@ -185,7 +185,7 @@ export const IngresoForm: React.FC<IngresoFormProps> = ({
             Cliente (opcional)
           </label>
           <select
-            {...register('clienteId')}
+            {...register("clienteId")}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="">Sin cliente</option>
@@ -202,7 +202,7 @@ export const IngresoForm: React.FC<IngresoFormProps> = ({
             Barbero *
           </label>
           <select
-            {...register('empleadoId', { required: 'El barbero es requerido' })}
+            {...register("empleadoId", { required: "El barbero es requerido" })}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="">Seleccionar barbero</option>
@@ -213,7 +213,9 @@ export const IngresoForm: React.FC<IngresoFormProps> = ({
             ))}
           </select>
           {errors.empleadoId && (
-            <p className="mt-1 text-sm text-red-600">{errors.empleadoId.message as string}</p>
+            <p className="mt-1 text-sm text-red-600">
+              {errors.empleadoId.message as string}
+            </p>
           )}
         </div>
       </div>
@@ -254,7 +256,9 @@ export const IngresoForm: React.FC<IngresoFormProps> = ({
                   </label>
                   <select
                     value={item.servicioId}
-                    onChange={(e) => actualizarItem(item.tempId, 'servicioId', e.target.value)}
+                    onChange={(e) =>
+                      actualizarItem(item.tempId, "servicioId", e.target.value)
+                    }
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="">Seleccionar</option>
@@ -275,7 +279,11 @@ export const IngresoForm: React.FC<IngresoFormProps> = ({
                     min={1}
                     value={item.cantidad}
                     onChange={(e) =>
-                      actualizarItem(item.tempId, 'cantidad', parseInt(e.target.value || '1', 10))
+                      actualizarItem(
+                        item.tempId,
+                        "cantidad",
+                        parseInt(e.target.value || "1", 10)
+                      )
                     }
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
@@ -291,7 +299,11 @@ export const IngresoForm: React.FC<IngresoFormProps> = ({
                     step="0.01"
                     value={item.precioUnitario}
                     onChange={(e) =>
-                      actualizarItem(item.tempId, 'precioUnitario', parseFloat(e.target.value || '0'))
+                      actualizarItem(
+                        item.tempId,
+                        "precioUnitario",
+                        parseFloat(e.target.value || "0")
+                      )
                     }
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
@@ -343,16 +355,16 @@ export const IngresoForm: React.FC<IngresoFormProps> = ({
             className={`
               flex items-center justify-center gap-2 p-4 border-2 rounded-lg cursor-pointer transition-colors
               ${
-                metodoPago === 'EFECTIVO'
-                  ? 'bg-green-50 border-green-500 text-green-900'
-                  : 'bg-white border-gray-300 hover:border-gray-400'
+                metodoPago === "EFECTIVO"
+                  ? "bg-green-50 border-green-500 text-green-900"
+                  : "bg-white border-gray-300 hover:border-gray-400"
               }
             `}
           >
             <input
               type="radio"
               value="EFECTIVO"
-              {...register('metodoPago')}
+              {...register("metodoPago")}
               className="w-4 h-4"
             />
             <span className="font-medium">Efectivo</span>
@@ -362,16 +374,16 @@ export const IngresoForm: React.FC<IngresoFormProps> = ({
             className={`
               flex items-center justify-center gap-2 p-4 border-2 rounded-lg cursor-pointer transition-colors
               ${
-                metodoPago === 'TRANSFERENCIA'
-                  ? 'bg-purple-50 border-purple-500 text-purple-900'
-                  : 'bg-white border-gray-300 hover:border-gray-400'
+                metodoPago === "TRANSFERENCIA"
+                  ? "bg-purple-50 border-purple-500 text-purple-900"
+                  : "bg-white border-gray-300 hover:border-gray-400"
               }
             `}
           >
             <input
               type="radio"
               value="TRANSFERENCIA"
-              {...register('metodoPago')}
+              {...register("metodoPago")}
               className="w-4 h-4"
             />
             <span className="font-medium">Transferencia</span>
@@ -380,12 +392,10 @@ export const IngresoForm: React.FC<IngresoFormProps> = ({
       </div>
 
       {/* Referencia (solo si es transferencia) */}
-      {metodoPago === 'TRANSFERENCIA' && (
+      {metodoPago === "TRANSFERENCIA" && (
         <Input
-          label="Número de Referencia *"
-          {...register('referencia', {
-            required: metodoPago === 'TRANSFERENCIA' ? 'La referencia es requerida' : false,
-          })}
+          label="Número de Referencia (opcional)"
+          {...register("referencia")}
           error={errors.referencia?.message as string}
           placeholder="123456789"
         />
@@ -397,7 +407,7 @@ export const IngresoForm: React.FC<IngresoFormProps> = ({
           Notas (opcional)
         </label>
         <textarea
-          {...register('notas')}
+          {...register("notas")}
           rows={3}
           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           placeholder="Información adicional..."
@@ -406,7 +416,12 @@ export const IngresoForm: React.FC<IngresoFormProps> = ({
 
       {/* Botones */}
       <div className="flex justify-end gap-3 pt-4 border-t">
-        <Button type="button" variant="ghost" onClick={onCancel} disabled={isLoading}>
+        <Button
+          type="button"
+          variant="ghost"
+          onClick={onCancel}
+          disabled={isLoading}
+        >
           Cancelar
         </Button>
         <Button
@@ -414,7 +429,7 @@ export const IngresoForm: React.FC<IngresoFormProps> = ({
           variant="primary"
           disabled={isLoading || items.length === 0}
         >
-          {isLoading ? 'Registrando...' : 'Registrar Venta'}
+          {isLoading ? "Registrando..." : "Registrar Venta"}
         </Button>
       </div>
     </form>

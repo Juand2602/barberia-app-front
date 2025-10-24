@@ -115,8 +115,13 @@ export const RegistrarPagoComisionModal: React.FC<RegistrarPagoComisionModalProp
             <div className="text-right">
               <p className="text-sm text-gray-600">Periodo</p>
               <p className="text-sm font-semibold text-gray-900">
-                {format(comisionPendiente.periodo.inicio, 'dd MMM', { locale: es })} -{' '}
-                {format(comisionPendiente.periodo.fin, 'dd MMM yyyy', { locale: es })}
+                {format(comisionPendiente.periodo.inicio, "dd MMM", {
+                  locale: es,
+                })}{" "}
+                -{" "}
+                {format(comisionPendiente.periodo.fin, "dd MMM yyyy", {
+                  locale: es,
+                })}
               </p>
             </div>
           </div>
@@ -124,7 +129,9 @@ export const RegistrarPagoComisionModal: React.FC<RegistrarPagoComisionModalProp
 
         {/* Resumen de ventas */}
         <Card>
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Resumen del Periodo</h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">
+            Resumen del Periodo
+          </h3>
           <div className="space-y-3">
             <div className="flex items-center justify-between py-2 border-b">
               <div className="flex items-center gap-2">
@@ -149,7 +156,9 @@ export const RegistrarPagoComisionModal: React.FC<RegistrarPagoComisionModalProp
             <div className="flex items-center justify-between py-2 border-b">
               <div className="flex items-center gap-2">
                 <DollarSign className="text-purple-600" size={18} />
-                <span className="text-gray-600">Comisión calculada ({empleado.porcentajeComision}%)</span>
+                <span className="text-gray-600">
+                  Comisión calculada ({empleado.porcentajeComision}%)
+                </span>
               </div>
               <span className="text-lg font-bold text-purple-600">
                 {formatCurrency(comisionPendiente.montoComision)}
@@ -167,21 +176,25 @@ export const RegistrarPagoComisionModal: React.FC<RegistrarPagoComisionModalProp
             <input
               type="number"
               step="10000"
-              {...register('ajuste')}
+              {...register("ajuste")}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="0"
             />
-          
           </div>
           <p className="mt-1 text-xs text-gray-500">
-            Usa valores positivos para aumentar o negativos para descontar. Ej: -5000 para descontar $5.000
+            Usa valores positivos para aumentar o negativos para descontar. Ej:
+            -5000 para descontar $5.000
           </p>
 
           {ajuste !== 0 && (
             <div className="mt-2 p-2 bg-yellow-50 rounded flex items-start gap-2">
-              <AlertCircle className="text-yellow-600 flex-shrink-0 mt-0.5" size={16} />
+              <AlertCircle
+                className="text-yellow-600 flex-shrink-0 mt-0.5"
+                size={16}
+              />
               <p className="text-xs text-yellow-700">
-                {ajuste > 0 ? 'Aumentando' : 'Descontando'} {formatCurrency(Math.abs(ajuste))} al monto calculado
+                {ajuste > 0 ? "Aumentando" : "Descontando"}{" "}
+                {formatCurrency(Math.abs(ajuste))} al monto calculado
               </p>
             </div>
           )}
@@ -194,7 +207,8 @@ export const RegistrarPagoComisionModal: React.FC<RegistrarPagoComisionModalProp
               <p className="text-sm text-gray-600">Monto Total a Pagar</p>
               {ajuste !== 0 && (
                 <p className="text-xs text-gray-500 mt-1">
-                  {formatCurrency(comisionPendiente.montoComision)} {ajuste > 0 ? '+' : '-'} {formatCurrency(Math.abs(ajuste))}
+                  {formatCurrency(comisionPendiente.montoComision)}{" "}
+                  {ajuste > 0 ? "+" : "-"} {formatCurrency(Math.abs(ajuste))}
                 </p>
               )}
             </div>
@@ -213,16 +227,17 @@ export const RegistrarPagoComisionModal: React.FC<RegistrarPagoComisionModalProp
             <label
               className={`
                 flex items-center justify-center gap-2 p-4 border-2 rounded-lg cursor-pointer transition-colors
-                ${metodoPago === 'EFECTIVO'
-                  ? 'bg-green-50 border-green-500 text-green-900'
-                  : 'bg-white border-gray-300 hover:border-gray-400'
+                ${
+                  metodoPago === "EFECTIVO"
+                    ? "bg-green-50 border-green-500 text-green-900"
+                    : "bg-white border-gray-300 hover:border-gray-400"
                 }
               `}
             >
               <input
                 type="radio"
                 value="EFECTIVO"
-                {...register('metodoPago')}
+                {...register("metodoPago")}
                 className="w-4 h-4"
               />
               <DollarSign size={20} />
@@ -232,16 +247,17 @@ export const RegistrarPagoComisionModal: React.FC<RegistrarPagoComisionModalProp
             <label
               className={`
                 flex items-center justify-center gap-2 p-4 border-2 rounded-lg cursor-pointer transition-colors
-                ${metodoPago === 'TRANSFERENCIA'
-                  ? 'bg-purple-50 border-purple-500 text-purple-900'
-                  : 'bg-white border-gray-300 hover:border-gray-400'
+                ${
+                  metodoPago === "TRANSFERENCIA"
+                    ? "bg-purple-50 border-purple-500 text-purple-900"
+                    : "bg-white border-gray-300 hover:border-gray-400"
                 }
               `}
             >
               <input
                 type="radio"
                 value="TRANSFERENCIA"
-                {...register('metodoPago')}
+                {...register("metodoPago")}
                 className="w-4 h-4"
               />
               <span className="font-medium">Transferencia</span>
@@ -250,13 +266,11 @@ export const RegistrarPagoComisionModal: React.FC<RegistrarPagoComisionModalProp
         </div>
 
         {/* Referencia (solo si es transferencia) */}
-        {metodoPago === 'TRANSFERENCIA' && (
+        {metodoPago === "TRANSFERENCIA" && (
           <Input
-            label="Número de Referencia *"
-            {...register('referencia', {
-              required: metodoPago === 'TRANSFERENCIA' ? 'La referencia es requerida' : false,
-            })}
-            error={errors.referencia?.message}
+            label="Número de Referencia (opcional)"
+            {...register("referencia")}
+            error={errors.referencia?.message as string}
             placeholder="123456789"
           />
         )}
@@ -267,7 +281,7 @@ export const RegistrarPagoComisionModal: React.FC<RegistrarPagoComisionModalProp
             Notas (opcional)
           </label>
           <textarea
-            {...register('notas')}
+            {...register("notas")}
             rows={3}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
             placeholder="Agrega notas adicionales sobre este pago..."
@@ -276,7 +290,12 @@ export const RegistrarPagoComisionModal: React.FC<RegistrarPagoComisionModalProp
 
         {/* Botones */}
         <div className="flex justify-end gap-3 pt-4 border-t">
-          <Button type="button" variant="ghost" onClick={onClose} disabled={isSubmitting}>
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={onClose}
+            disabled={isSubmitting}
+          >
             Cancelar
           </Button>
           <Button
@@ -285,7 +304,7 @@ export const RegistrarPagoComisionModal: React.FC<RegistrarPagoComisionModalProp
             className="bg-green-600 hover:bg-green-700"
             disabled={isSubmitting}
           >
-            {isSubmitting ? 'Procesando...' : 'Confirmar Pago'}
+            {isSubmitting ? "Procesando..." : "Confirmar Pago"}
           </Button>
         </div>
       </form>

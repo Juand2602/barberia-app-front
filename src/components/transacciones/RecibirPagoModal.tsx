@@ -222,18 +222,26 @@ export const RecibirPagoModal: React.FC<RecibirPagoModalProps> = ({
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">Cita asociada</p>
-                <p className="font-semibold text-gray-900">{transaccion.cita.radicado}</p>
+                <p className="font-semibold text-gray-900">
+                  {transaccion.cita.radicado}
+                </p>
                 <p className="text-sm text-gray-600">
-                  {transaccion.cliente?.nombre} - {new Date(transaccion.cita.fechaHora).toLocaleString('es-CO', {
-                    dateStyle: 'short',
-                    timeStyle: 'short'
-                  })}
+                  {transaccion.cliente?.nombre} -{" "}
+                  {new Date(transaccion.cita.fechaHora).toLocaleString(
+                    "es-CO",
+                    {
+                      dateStyle: "short",
+                      timeStyle: "short",
+                    }
+                  )}
                 </p>
               </div>
               {transaccion.cita.empleado && (
                 <div className="text-right">
                   <p className="text-sm text-gray-600">Barbero de la cita</p>
-                  <p className="font-semibold text-blue-700">{transaccion.cita.empleado.nombre}</p>
+                  <p className="font-semibold text-blue-700">
+                    {transaccion.cita.empleado.nombre}
+                  </p>
                 </div>
               )}
             </div>
@@ -246,7 +254,7 @@ export const RecibirPagoModal: React.FC<RecibirPagoModalProps> = ({
             Barbero que realizó el servicio *
           </label>
           <select
-            {...register('empleadoId', { required: 'El barbero es requerido' })}
+            {...register("empleadoId", { required: "El barbero es requerido" })}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="">Seleccionar barbero</option>
@@ -257,7 +265,9 @@ export const RecibirPagoModal: React.FC<RecibirPagoModalProps> = ({
             ))}
           </select>
           {errors.empleadoId && (
-            <p className="mt-1 text-sm text-red-600">{errors.empleadoId.message}</p>
+            <p className="mt-1 text-sm text-red-600">
+              {errors.empleadoId.message}
+            </p>
           )}
         </div>
 
@@ -289,7 +299,9 @@ export const RecibirPagoModal: React.FC<RecibirPagoModalProps> = ({
                   </label>
                   <select
                     value={item.servicioId}
-                    onChange={(e) => actualizarItem(item.tempId, 'servicioId', e.target.value)}
+                    onChange={(e) =>
+                      actualizarItem(item.tempId, "servicioId", e.target.value)
+                    }
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="">Seleccionar</option>
@@ -310,7 +322,11 @@ export const RecibirPagoModal: React.FC<RecibirPagoModalProps> = ({
                     min={1}
                     value={item.cantidad}
                     onChange={(e) =>
-                      actualizarItem(item.tempId, 'cantidad', parseInt(e.target.value || '1', 10))
+                      actualizarItem(
+                        item.tempId,
+                        "cantidad",
+                        parseInt(e.target.value || "1", 10)
+                      )
                     }
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
@@ -326,7 +342,11 @@ export const RecibirPagoModal: React.FC<RecibirPagoModalProps> = ({
                     step="0.01"
                     value={item.precioUnitario}
                     onChange={(e) =>
-                      actualizarItem(item.tempId, 'precioUnitario', parseFloat(e.target.value || '0'))
+                      actualizarItem(
+                        item.tempId,
+                        "precioUnitario",
+                        parseFloat(e.target.value || "0")
+                      )
                     }
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
@@ -360,7 +380,9 @@ export const RecibirPagoModal: React.FC<RecibirPagoModalProps> = ({
         {/* Total */}
         <div className="bg-green-50 p-4 rounded-lg">
           <div className="flex justify-between items-center">
-            <span className="text-lg font-semibold text-gray-900">TOTAL A PAGAR:</span>
+            <span className="text-lg font-semibold text-gray-900">
+              TOTAL A PAGAR:
+            </span>
             <span className="text-3xl font-bold text-green-600">
               {formatCurrency(calcularTotal())}
             </span>
@@ -375,15 +397,15 @@ export const RecibirPagoModal: React.FC<RecibirPagoModalProps> = ({
           <div className="grid grid-cols-2 gap-3">
             <label
               className={`flex items-center justify-center gap-2 p-4 border-2 rounded-lg cursor-pointer transition-colors ${
-                metodoPago === 'EFECTIVO'
-                  ? 'bg-green-50 border-green-500 text-green-900'
-                  : 'bg-white border-gray-300 hover:border-gray-400'
+                metodoPago === "EFECTIVO"
+                  ? "bg-green-50 border-green-500 text-green-900"
+                  : "bg-white border-gray-300 hover:border-gray-400"
               }`}
             >
               <input
                 type="radio"
                 value="EFECTIVO"
-                {...register('metodoPago')}
+                {...register("metodoPago")}
                 className="w-4 h-4"
               />
               <DollarSign size={20} />
@@ -392,15 +414,15 @@ export const RecibirPagoModal: React.FC<RecibirPagoModalProps> = ({
 
             <label
               className={`flex items-center justify-center gap-2 p-4 border-2 rounded-lg cursor-pointer transition-colors ${
-                metodoPago === 'TRANSFERENCIA'
-                  ? 'bg-purple-50 border-purple-500 text-purple-900'
-                  : 'bg-white border-gray-300 hover:border-gray-400'
+                metodoPago === "TRANSFERENCIA"
+                  ? "bg-purple-50 border-purple-500 text-purple-900"
+                  : "bg-white border-gray-300 hover:border-gray-400"
               }`}
             >
               <input
                 type="radio"
                 value="TRANSFERENCIA"
-                {...register('metodoPago')}
+                {...register("metodoPago")}
                 className="w-4 h-4"
               />
               <span className="font-medium">Transferencia</span>
@@ -409,20 +431,23 @@ export const RecibirPagoModal: React.FC<RecibirPagoModalProps> = ({
         </div>
 
         {/* Referencia */}
-        {metodoPago === 'TRANSFERENCIA' && (
+        {metodoPago === "TRANSFERENCIA" && (
           <Input
-            label="Número de Referencia *"
-            {...register('referencia', {
-              required: metodoPago === 'TRANSFERENCIA' ? 'La referencia es requerida' : false,
-            })}
-            error={errors.referencia?.message}
+            label="Número de Referencia"
+            {...register("referencia")}
+            error={errors.referencia?.message as string}
             placeholder="123456789"
           />
         )}
 
         {/* Botones */}
         <div className="flex justify-end gap-3 pt-4 border-t">
-          <Button type="button" variant="ghost" onClick={onClose} disabled={isSubmitting}>
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={onClose}
+            disabled={isSubmitting}
+          >
             Cancelar
           </Button>
           <Button
@@ -431,7 +456,7 @@ export const RecibirPagoModal: React.FC<RecibirPagoModalProps> = ({
             className="bg-green-600 hover:bg-green-700"
             disabled={isSubmitting || items.length === 0}
           >
-            {isSubmitting ? 'Procesando...' : 'Confirmar Pago'}
+            {isSubmitting ? "Procesando..." : "Confirmar Pago"}
           </Button>
         </div>
       </form>
