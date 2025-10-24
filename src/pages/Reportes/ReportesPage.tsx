@@ -277,6 +277,16 @@ const ReportesPage: React.FC = () => {
     );
     pdf.addTable(headersIngresos, dataIngresos);
     
+    // ✅ NUEVO: Egresos por método de pago
+    if (reporteFinanciero.egresosPorMetodo && Object.keys(reporteFinanciero.egresosPorMetodo).length > 0) {
+      pdf.addSection("Egresos por Método de Pago");
+      const headersEgresosMetodo = ["Método", "Total"];
+      const dataEgresosMetodo = Object.entries(reporteFinanciero.egresosPorMetodo).map(
+        ([metodo, total]) => [metodo, formatCurrency(total)]
+      );
+      pdf.addTable(headersEgresosMetodo, dataEgresosMetodo);
+    }
+    
     // Egresos por categoría
     pdf.addSection("Egresos por Categoría");
     const headersEgresos = ["Categoría", "Total"];
@@ -284,6 +294,34 @@ const ReportesPage: React.FC = () => {
       ([categoria, total]) => [categoria, formatCurrency(total)]
     );
     pdf.addTable(headersEgresos, dataEgresos);
+    
+    // ✅ NUEVO: Detalle de transacciones de ingresos
+    if (reporteFinanciero.detalleIngresos && reporteFinanciero.detalleIngresos.length > 0) {
+      pdf.addSection("Detalle de Ingresos");
+      const headersIngTrans = ["Fecha", "Cliente", "Empleado", "Método", "Total"];
+      const dataIngTrans = reporteFinanciero.detalleIngresos.map(t => [
+        format(new Date(t.fecha), "dd/MM/yyyy HH:mm", { locale: es }),
+        t.cliente || "Sin cliente",
+        t.empleado || "Sin empleado",
+        t.metodoPago,
+        formatCurrency(t.total)
+      ]);
+      pdf.addTable(headersIngTrans, dataIngTrans);
+    }
+    
+    // ✅ NUEVO: Detalle de transacciones de egresos
+    if (reporteFinanciero.detalleEgresos && reporteFinanciero.detalleEgresos.length > 0) {
+      pdf.addSection("Detalle de Egresos");
+      const headersEgrTrans = ["Fecha", "Concepto", "Categoría", "Método", "Total"];
+      const dataEgrTrans = reporteFinanciero.detalleEgresos.map(t => [
+        format(new Date(t.fecha), "dd/MM/yyyy HH:mm", { locale: es }),
+        t.concepto || "Sin concepto",
+        t.categoria || "Sin categoría",
+        t.metodoPago,
+        formatCurrency(t.total)
+      ]);
+      pdf.addTable(headersEgrTrans, dataEgrTrans);
+    }
   };
 
   const generarPDFClientes = async (pdf: PDFGenerator) => {
@@ -910,7 +948,7 @@ const ReportesPage: React.FC = () => {
                 </Card>
               </div>
 
-              {/* Ingresos por método */}
+              {/* Ingresos y Egresos por método */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Card>
                   <div className="p-6">
@@ -937,31 +975,194 @@ const ReportesPage: React.FC = () => {
                   </div>
                 </Card>
 
+                {/* ✅ NUEVO: Egresos por método de pago */}
                 <Card>
                   <div className="p-6">
                     <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                      Egresos por Categoría
+                      Egresos por Método de Pago
                     </h3>
                     <div className="space-y-3">
-                      {Object.entries(
-                        reporteFinanciero.egresosPorCategoria
-                      ).map(([categoria, total]) => (
-                        <div
-                          key={categoria}
-                          className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-                        >
-                          <span className="font-medium text-gray-900">
-                            {categoria}
-                          </span>
-                          <span className="font-semibold text-gray-900">
-                            {formatCurrency(total)}
-                          </span>
-                        </div>
-                      ))}
+                      {reporteFinanciero.egresosPorMetodo && Object.keys(reporteFinanciero.egresosPorMetodo).length > 0 ? (
+                        Object.entries(reporteFinanciero.egresosPorMetodo).map(
+                          ([metodo, total]) => (
+                            <div
+                              key={metodo}
+                              className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                            >
+                              <span className="font-medium text-gray-900">
+                                {metodo}
+                              </span>
+                              <span className="font-semibold text-gray-900">
+                                {formatCurrency(total)}
+                              </span>
+                            </div>
+                          )
+                        )
+                      ) : (
+                        <p className="text-sm text-gray-500 text-center py-4">
+                          No hay egresos en este período
+                        </p>
+                      )}
                     </div>
                   </div>
                 </Card>
               </div>
+
+              {/* Egresos por categoría */}
+              <Card>
+                <div className="p-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                    Egresos por Categoría
+                  </h3>
+                  <div className="space-y-3">
+                    {Object.entries(
+                      reporteFinanciero.egresosPorCategoria
+                    ).map(([categoria, total]) => (
+                      <div
+                        key={categoria}
+                        className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                      >
+                        <span className="font-medium text-gray-900">
+                          {categoria}
+                        </span>
+                        <span className="font-semibold text-gray-900">
+                          {formatCurrency(total)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </Card>
+
+              {/* ✅ NUEVO: Detalle de Ingresos */}
+              {reporteFinanciero.detalleIngresos && reporteFinanciero.detalleIngresos.length > 0 && (
+                <Card>
+                  <div className="p-6">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                      Detalle de Transacciones de Ingresos
+                    </h3>
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
+                        <thead>
+                          <tr className="border-b">
+                            <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
+                              Fecha
+                            </th>
+                            <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
+                              Cliente
+                            </th>
+                            <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
+                              Empleado
+                            </th>
+                            <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
+                              Método
+                            </th>
+                            <th className="text-right py-3 px-4 text-sm font-semibold text-gray-700">
+                              Total
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {reporteFinanciero.detalleIngresos.map((t) => (
+                            <tr key={t.id} className="border-b hover:bg-gray-50">
+                              <td className="py-3 px-4 text-sm text-gray-900">
+                                {format(new Date(t.fecha), "dd/MM/yyyy HH:mm", {
+                                  locale: es,
+                                })}
+                              </td>
+                              <td className="py-3 px-4 text-sm text-gray-900">
+                                {t.cliente || "Sin cliente"}
+                              </td>
+                              <td className="py-3 px-4 text-sm text-gray-900">
+                                {t.empleado || "Sin empleado"}
+                              </td>
+                              <td className="py-3 px-4">
+                                <Badge
+                                  variant={
+                                    t.metodoPago === "EFECTIVO"
+                                      ? "success"
+                                      : "info"
+                                  }
+                                >
+                                  {t.metodoPago}
+                                </Badge>
+                              </td>
+                              <td className="py-3 px-4 text-sm font-semibold text-right text-gray-900">
+                                {formatCurrency(t.total)}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </Card>
+              )}
+
+              {/* ✅ NUEVO: Detalle de Egresos */}
+              {reporteFinanciero.detalleEgresos && reporteFinanciero.detalleEgresos.length > 0 && (
+                <Card>
+                  <div className="p-6">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                      Detalle de Transacciones de Egresos
+                    </h3>
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
+                        <thead>
+                          <tr className="border-b">
+                            <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
+                              Fecha
+                            </th>
+                            <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
+                              Concepto
+                            </th>
+                            <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
+                              Categoría
+                            </th>
+                            <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
+                              Método
+                            </th>
+                            <th className="text-right py-3 px-4 text-sm font-semibold text-gray-700">
+                              Total
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {reporteFinanciero.detalleEgresos.map((t) => (
+                            <tr key={t.id} className="border-b hover:bg-gray-50">
+                              <td className="py-3 px-4 text-sm text-gray-900">
+                                {format(new Date(t.fecha), "dd/MM/yyyy HH:mm", {
+                                  locale: es,
+                                })}
+                              </td>
+                              <td className="py-3 px-4 text-sm text-gray-900">
+                                {t.concepto || "Sin concepto"}
+                              </td>
+                              <td className="py-3 px-4 text-sm text-gray-600">
+                                {t.categoria || "Sin categoría"}
+                              </td>
+                              <td className="py-3 px-4">
+                                <Badge
+                                  variant={
+                                    t.metodoPago === "EFECTIVO"
+                                      ? "success"
+                                      : "info"
+                                  }
+                                >
+                                  {t.metodoPago}
+                                </Badge>
+                              </td>
+                              <td className="py-3 px-4 text-sm font-semibold text-right text-red-600">
+                                {formatCurrency(t.total)}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </Card>
+              )}
             </div>
           )}
 

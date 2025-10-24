@@ -57,7 +57,7 @@ export interface ReporteVentas {
     empleado: string;
     servicios: string;
     metodoPago: string;
-    estadoPago: EstadoPago;  // ✅ AGREGADO
+    estadoPago: EstadoPago;
     total: number;
   }>;
 }
@@ -107,6 +107,7 @@ export interface ReporteCitas {
   }>;
 }
 
+// ✅ ACTUALIZADO: ReporteFinanciero con nuevos campos
 export interface ReporteFinanciero {
   periodo: PeriodoReporte;
   resumen: {
@@ -116,12 +117,30 @@ export interface ReporteFinanciero {
     margenUtilidad: number;
   };
   ingresosPorMetodo: Record<string, number>;
+  egresosPorMetodo: Record<string, number>; // ✅ NUEVO
   egresosPorCategoria: Record<string, number>;
   flujoDiario: Array<{
     fecha: string;
     ingresos: number;
     egresos: number;
     neto: number;
+  }>;
+  // ✅ NUEVO: Detalle de transacciones
+  detalleIngresos: Array<{
+    id: string;
+    fecha: Date;
+    cliente: string | null;
+    empleado: string | null;
+    metodoPago: string;
+    total: number;
+  }>;
+  detalleEgresos: Array<{
+    id: string;
+    fecha: Date;
+    concepto: string | null;
+    categoria: string | null;
+    metodoPago: string;
+    total: number;
   }>;
 }
 
