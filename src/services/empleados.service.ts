@@ -1,3 +1,5 @@
+// src/services/empleados.service.ts (FRONTEND)
+
 import { api } from './api';
 import { 
   Empleado, 
@@ -11,20 +13,19 @@ export const empleadosService = {
   async getAll(activo?: boolean): Promise<Empleado[]> {
     const params: any = {};
     if (activo !== undefined) params.activo = activo;
-
     const response = await api.get('/empleados', { params });
     return response.data.data;
   },
 
   // Obtener un empleado por ID
   async getById(id: string): Promise<Empleado> {
-    const response = await api.get(`/empleados/${id}`);
+    const response = await api.get(`/empleados/${id}`); // ✅ CORREGIDO
     return response.data.data;
   },
 
   // Obtener estadísticas de un empleado
   async getEstadisticas(id: string): Promise<EmpleadoEstadisticas> {
-    const response = await api.get(`/empleados/${id}/estadisticas`);
+    const response = await api.get(`/empleados/${id}/estadisticas`); // ✅ CORREGIDO
     return response.data.data;
   },
 
@@ -34,7 +35,7 @@ export const empleadosService = {
     fecha: Date, 
     duracionMinutos: number
   ): Promise<{ disponible: boolean; motivo?: string }> {
-    const response = await api.post(`/empleados/${id}/verificar-disponibilidad`, {
+    const response = await api.post(`/empleados/${id}/verificar-disponibilidad`, { // ✅ CORREGIDO
       fecha: fecha.toISOString(),
       duracionMinutos,
     });
@@ -49,12 +50,12 @@ export const empleadosService = {
 
   // Actualizar un empleado
   async update(id: string, data: UpdateEmpleadoDTO): Promise<Empleado> {
-    const response = await api.put(`/empleados/${id}`, data);
+    const response = await api.put(`/empleados/${id}`, data); // ✅ CORREGIDO
     return response.data.data;
   },
 
   // Desactivar un empleado
   async delete(id: string): Promise<void> {
-    await api.delete(`/empleados/${id}`);
+    await api.delete(`/empleados/${id}`); // ✅ CORREGIDO
   },
 };

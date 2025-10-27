@@ -1,4 +1,4 @@
-// src/pages/Empleados/EmpleadosPage.tsx - COMPLETO CON COMISIONES
+// src/pages/Empleados/EmpleadosPage.tsx - COMPLETO CON COMISIONES Y TOGGLE ESTADO
 
 import React, { useEffect, useState } from 'react';
 import { Plus } from 'lucide-react';
@@ -27,7 +27,7 @@ export const EmpleadosPage: React.FC = () => {
   const [isDetalleOpen, setIsDetalleOpen] = useState(false);
   const [empleadoSeleccionado, setEmpleadoSeleccionado] = useState<Empleado | null>(null);
 
-  // ✅ NUEVO: Comisiones
+  // Comisiones
   const [isComisionesOpen, setIsComisionesOpen] = useState(false);
   const [isPagoComisionOpen, setIsPagoComisionOpen] = useState(false);
   const [empleadoComisiones, setEmpleadoComisiones] = useState<Empleado | null>(null);
@@ -68,6 +68,31 @@ export const EmpleadosPage: React.FC = () => {
     }
   };
 
+  // ✅ NUEVO: Función para activar/desactivar empleado
+  const handleToggleEstado = async (empleado: Empleado) => {
+    const nuevoEstado = !empleado.activo;
+    const accion = nuevoEstado ? 'activar' : 'desactivar';
+    
+    if (!confirm(`¿Estás seguro de ${accion} a ${empleado.nombre}?`)) return;
+
+    try {
+      await empleadosService.update(empleado.id, { activo: nuevoEstado });
+      await fetchEmpleados();
+      alert(`Empleado ${nuevoEstado ? 'activado' : 'desactivado'} exitosamente`);
+      
+      // Si está viendo el detalle de este empleado, actualizar
+      if (empleadoSeleccionado?.id === empleado.id) {
+        const empleadosActualizados = await empleadosService.getAll();
+        const empleadoActualizado = empleadosActualizados.find((e: Empleado) => e.id === empleado.id);
+        if (empleadoActualizado) {
+          setEmpleadoSeleccionado(empleadoActualizado);
+        }
+      }
+    } catch (error: any) {
+      alert(error.response?.data?.message || `Error al ${accion} empleado`);
+    }
+  };
+
   const handleSubmit = async (data: CreateEmpleadoDTO) => {
     setIsSubmitting(true);
     try {
@@ -88,18 +113,15 @@ export const EmpleadosPage: React.FC = () => {
     }
   };
 
-  // ✅ NUEVO: Manejar apertura del modal de comisiones
   const handleVerComisiones = (empleado: Empleado) => {
     setEmpleadoComisiones(empleado);
     setIsComisionesOpen(true);
   };
 
-  // ✅ NUEVO: Manejar apertura del modal de registrar pago
   const handleRegistrarPago = async (empleadoId: string) => {
     if (!empleadoComisiones) return;
 
     try {
-      // Calcular comisiones del periodo actual
       const hoy = new Date();
       const inicio = startOfMonth(hoy);
       const fin = endOfMonth(hoy);
@@ -118,44 +140,41 @@ export const EmpleadosPage: React.FC = () => {
     }
   };
 
-  // ✅ NUEVO: Confirmar pago de comisión
- // Confirmar pago de comisión
-const handleConfirmarPago = async (data: {
-  metodoPago: 'EFECTIVO' | 'TRANSFERENCIA';
-  referencia?: string;
-  notas?: string;
-  ajuste: number;
-}) => {
-  if (!empleadoComisiones || !comisionPendiente) return;
+  const handleConfirmarPago = async (data: {
+    metodoPago: 'EFECTIVO' | 'TRANSFERENCIA';
+    referencia?: string;
+    notas?: string;
+    ajuste: number;
+  }) => {
+    if (!empleadoComisiones || !comisionPendiente) return;
 
-  try {
-    const hoy = new Date();
-    const inicio = startOfMonth(hoy);
-    const fin = endOfMonth(hoy);
-    const periodo = format(inicio, 'yyyy-MM');
+    try {
+      const hoy = new Date();
+      const inicio = startOfMonth(hoy);
+      const fin = endOfMonth(hoy);
+      const periodo = format(inicio, 'yyyy-MM');
 
-    await comisionesService.registrarPago(empleadoComisiones.id, {
-      empleadoId: empleadoComisiones.id,
-      periodo,
-      fechaInicio: inicio, // ✅ Pasar Date directamente, el servicio lo convierte
-      fechaFin: fin,       // ✅ Pasar Date directamente, el servicio lo convierte
-      metodoPago: data.metodoPago,
-      referencia: data.referencia,
-      notas: data.notas,
-      ajuste: data.ajuste,
-    });
+      await comisionesService.registrarPago(empleadoComisiones.id, {
+        empleadoId: empleadoComisiones.id,
+        periodo,
+        fechaInicio: inicio,
+        fechaFin: fin,
+        metodoPago: data.metodoPago,
+        referencia: data.referencia,
+        notas: data.notas,
+        ajuste: data.ajuste,
+      });
 
-    alert('Pago de comisión registrado exitosamente');
-    setIsPagoComisionOpen(false);
-    setComisionPendiente(null);
-    
-    // Reabrir el modal de comisiones para ver el historial actualizado
-    setIsComisionesOpen(true);
-  } catch (error: any) {
-    alert(error.response?.data?.message || 'Error al registrar el pago');
-    console.error('Error completo:', error);
-  }
-};
+      alert('Pago de comisión registrado exitosamente');
+      setIsPagoComisionOpen(false);
+      setComisionPendiente(null);
+      
+      setIsComisionesOpen(true);
+    } catch (error: any) {
+      alert(error.response?.data?.message || 'Error al registrar el pago');
+      console.error('Error completo:', error);
+    }
+  };
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
@@ -166,12 +185,12 @@ const handleConfirmarPago = async (data: {
           Gestiona los barberos, horarios y comisiones
         </p>
       </div>
+
       {/* Toolbar */}
       <Card className="mb-6">
         <div className="flex justify-between items-center">
           <div className="text-sm text-gray-600">
-            Total de empleados:{" "}
-            <span className="font-semibold">{empleados.length}</span>
+            Total de empleados: <span className="font-semibold">{empleados.length}</span>
           </div>
           <Button onClick={handleCreate} className="flex items-center gap-2">
             <Plus size={20} />
@@ -179,6 +198,7 @@ const handleConfirmarPago = async (data: {
           </Button>
         </div>
       </Card>
+
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
         <Card>
@@ -206,6 +226,7 @@ const handleConfirmarPago = async (data: {
           </div>
         </Card>
       </div>
+
       {/* Table */}
       <Card>
         {loading ? (
@@ -220,9 +241,11 @@ const handleConfirmarPago = async (data: {
             onEdit={handleEdit}
             onDelete={handleDelete}
             onVerComisiones={handleVerComisiones}
+            onToggleEstado={handleToggleEstado} // ✅ NUEVO
           />
         )}
       </Card>
+
       {/* Modal Form */}
       <Modal
         isOpen={isModalOpen}
@@ -243,8 +266,7 @@ const handleConfirmarPago = async (data: {
                   porcentajeComision: editingEmpleado.porcentajeComision,
                   horarioLunes: editingEmpleado.horarioLunes || undefined,
                   horarioMartes: editingEmpleado.horarioMartes || undefined,
-                  horarioMiercoles:
-                    editingEmpleado.horarioMiercoles || undefined,
+                  horarioMiercoles: editingEmpleado.horarioMiercoles || undefined,
                   horarioJueves: editingEmpleado.horarioJueves || undefined,
                   horarioViernes: editingEmpleado.horarioViernes || undefined,
                   horarioSabado: editingEmpleado.horarioSabado || undefined,
@@ -260,6 +282,7 @@ const handleConfirmarPago = async (data: {
           isLoading={isSubmitting}
         />
       </Modal>
+
       {/* Modal Detalle */}
       <Modal
         isOpen={isDetalleOpen}
@@ -285,10 +308,8 @@ const handleConfirmarPago = async (data: {
               setIsDetalleOpen(false);
               setEmpleadoSeleccionado(null);
             }}
-            // ✅ NUEVO: Refrescar datos después de conectar/desconectar
             onActualizar={async () => {
               await fetchEmpleados();
-              // Actualizar el empleado seleccionado con los nuevos datos
               const empleadoActualizado = empleados.find(
                 (e) => e.id === empleadoSeleccionado.id
               );
@@ -299,7 +320,8 @@ const handleConfirmarPago = async (data: {
           />
         )}
       </Modal>
-      {/* ✅ NUEVO: Modal Comisiones */}
+
+      {/* Modal Comisiones */}
       {empleadoComisiones && (
         <ComisionesModal
           isOpen={isComisionesOpen}
@@ -311,7 +333,8 @@ const handleConfirmarPago = async (data: {
           onRegistrarPago={handleRegistrarPago}
         />
       )}
-      {/* ✅ NUEVO: Modal Registrar Pago */}
+
+      {/* Modal Registrar Pago */}
       {empleadoComisiones && comisionPendiente && (
         <RegistrarPagoComisionModal
           isOpen={isPagoComisionOpen}

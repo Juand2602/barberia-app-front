@@ -1,7 +1,7 @@
 // src/components/tables/EmpleadosTable.tsx
 
 import React from 'react';
-import { Eye, Edit2, Trash2, DollarSign, Calendar } from 'lucide-react';
+import { Eye, Edit2, DollarSign, Calendar, UserCheck, UserX } from 'lucide-react'; // ✅ Agregamos Power
 import { Empleado } from '@/types/empleado.types';
 import { Button } from '@components/ui/Button';
 import { Badge } from '@components/ui/Badge';
@@ -13,7 +13,8 @@ interface EmpleadosTableProps {
   onView: (empleado: Empleado) => void;
   onEdit: (empleado: Empleado) => void;
   onDelete: (empleado: Empleado) => void;
-  onVerComisiones: (empleado: Empleado) => void; // ✅ NUEVO
+  onVerComisiones: (empleado: Empleado) => void;
+  onToggleEstado?: (empleado: Empleado) => void; // ✅ NUEVO: Para activar/desactivar
 }
 
 export const EmpleadosTable: React.FC<EmpleadosTableProps> = ({
@@ -21,7 +22,8 @@ export const EmpleadosTable: React.FC<EmpleadosTableProps> = ({
   onView,
   onEdit,
   onDelete,
-  onVerComisiones, // ✅ NUEVO
+  onVerComisiones,
+  onToggleEstado, // ✅ NUEVO
 }) => {
   // Función para obtener los días laborales del empleado
   const getDiasLaborales = (empleado: Empleado): string[] => {
@@ -61,7 +63,6 @@ export const EmpleadosTable: React.FC<EmpleadosTableProps> = ({
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
               Días Laborales
             </th>
-            {/* ✅ NUEVA COLUMNA */}
             <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
               Comisión
             </th>
@@ -88,7 +89,6 @@ export const EmpleadosTable: React.FC<EmpleadosTableProps> = ({
               <td className="px-6 py-4 whitespace-nowrap">
                 <div className="text-sm text-gray-900">{empleado.telefono}</div>
               </td>
-              {/* Columna de Días Laborales reemplazando a Especialidades */}
               <td className="px-6 py-4 whitespace-nowrap">
                 <div className="flex gap-1">
                   {getDiasLaborales(empleado).map((dia, idx) => (
@@ -101,7 +101,6 @@ export const EmpleadosTable: React.FC<EmpleadosTableProps> = ({
                   ))}
                 </div>
               </td>
-              {/* ✅ NUEVA COLUMNA - Porcentaje de Comisión */}
               <td className="px-6 py-4 whitespace-nowrap text-center">
                 <div className="inline-flex items-center gap-1 px-3 py-1 bg-green-50 rounded-full">
                   <DollarSign size={14} className="text-green-600" />
@@ -130,7 +129,7 @@ export const EmpleadosTable: React.FC<EmpleadosTableProps> = ({
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                 <div className="flex justify-end gap-2">
-                  {/* ✅ NUEVO BOTÓN - Ver Comisiones */}
+                  {/* Botón de Comisiones */}
                   <Button
                     size="sm"
                     variant="primary"
@@ -141,6 +140,7 @@ export const EmpleadosTable: React.FC<EmpleadosTableProps> = ({
                     <DollarSign size={16} />
                   </Button>
 
+                  {/* Botón Ver Detalle */}
                   <Button
                     size="sm"
                     variant="ghost"
@@ -150,6 +150,7 @@ export const EmpleadosTable: React.FC<EmpleadosTableProps> = ({
                     <Eye size={16} />
                   </Button>
 
+                  {/* Botón Editar */}
                   <Button
                     size="sm"
                     variant="ghost"
@@ -159,14 +160,32 @@ export const EmpleadosTable: React.FC<EmpleadosTableProps> = ({
                     <Edit2 size={16} />
                   </Button>
 
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => onDelete(empleado)}
-                    title="Desactivar"
-                  >
-                    <Trash2 size={16} className="text-red-600" />
-                  </Button>
+                  {/* ✅ NUEVO: Botón Activar/Desactivar dinámico */}
+                  {onToggleEstado ? (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => onToggleEstado(empleado)}
+                      title={empleado.activo ? 'Desactivar empleado' : 'Activar empleado'}
+                      className={empleado.activo ? '' : 'text-green-600 hover:text-green-700'}
+                    >
+                      {empleado.activo ? (
+                        <UserX size={16} className="text-red-600" />
+                      ) : (
+                        <UserCheck size={16} className="text-green-600" />
+                      )}
+                    </Button>
+                  ) : (
+                    // Fallback al comportamiento anterior si no se pasa onToggleEstado
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => onDelete(empleado)}
+                      title="Desactivar"
+                    >
+                      <UserX size={16} className="text-red-600" />
+                    </Button>
+                  )}
                 </div>
               </td>
             </tr>

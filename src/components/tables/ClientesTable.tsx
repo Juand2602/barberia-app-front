@@ -1,7 +1,7 @@
 import React from 'react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Eye, Edit, Trash2, Phone, Mail } from 'lucide-react';
+import { Eye, Edit, UserX, Phone, Mail } from 'lucide-react';
 import { Cliente } from '@/types/cliente.types';
 
 import { Button } from '@components/ui/Button';
@@ -111,7 +111,7 @@ export const ClientesTable: React.FC<ClientesTableProps> = ({
                     onClick={() => onDelete(cliente)}
                     title="Desactivar"
                   >
-                    <Trash2 size={16} className="text-red-600" />
+                    <UserX size={16} className="text-red-600" />
                   </Button>
                 </div>
               </td>
