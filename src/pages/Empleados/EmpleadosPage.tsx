@@ -166,12 +166,12 @@ const handleConfirmarPago = async (data: {
           Gestiona los barberos, horarios y comisiones
         </p>
       </div>
-
       {/* Toolbar */}
       <Card className="mb-6">
         <div className="flex justify-between items-center">
           <div className="text-sm text-gray-600">
-            Total de empleados: <span className="font-semibold">{empleados.length}</span>
+            Total de empleados:{" "}
+            <span className="font-semibold">{empleados.length}</span>
           </div>
           <Button onClick={handleCreate} className="flex items-center gap-2">
             <Plus size={20} />
@@ -179,13 +179,12 @@ const handleConfirmarPago = async (data: {
           </Button>
         </div>
       </Card>
-
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
         <Card>
           <div className="text-center">
             <p className="text-3xl font-bold text-green-600">
-              {empleados.filter(e => e.activo).length}
+              {empleados.filter((e) => e.activo).length}
             </p>
             <p className="text-sm text-gray-600 mt-1">Empleados Activos</p>
           </div>
@@ -201,13 +200,12 @@ const handleConfirmarPago = async (data: {
         <Card>
           <div className="text-center">
             <p className="text-3xl font-bold text-purple-600">
-              {empleados.filter(e => !e.activo).length}
+              {empleados.filter((e) => !e.activo).length}
             </p>
             <p className="text-sm text-gray-600 mt-1">Inactivos</p>
           </div>
         </Card>
       </div>
-
       {/* Table */}
       <Card>
         {loading ? (
@@ -225,7 +223,6 @@ const handleConfirmarPago = async (data: {
           />
         )}
       </Card>
-
       {/* Modal Form */}
       <Modal
         isOpen={isModalOpen}
@@ -233,23 +230,28 @@ const handleConfirmarPago = async (data: {
           setIsModalOpen(false);
           setEditingEmpleado(null);
         }}
-        title={editingEmpleado ? 'Editar Empleado' : 'Nuevo Empleado'}
+        title={editingEmpleado ? "Editar Empleado" : "Nuevo Empleado"}
         size="xl"
       >
         <EmpleadoForm
-          initialData={editingEmpleado ? {
-            nombre: editingEmpleado.nombre,
-            telefono: editingEmpleado.telefono,
-            especialidades: editingEmpleado.especialidades,
-            porcentajeComision: editingEmpleado.porcentajeComision,
-            horarioLunes: editingEmpleado.horarioLunes || undefined,
-            horarioMartes: editingEmpleado.horarioMartes || undefined,
-            horarioMiercoles: editingEmpleado.horarioMiercoles || undefined,
-            horarioJueves: editingEmpleado.horarioJueves || undefined,
-            horarioViernes: editingEmpleado.horarioViernes || undefined,
-            horarioSabado: editingEmpleado.horarioSabado || undefined,
-            horarioDomingo: editingEmpleado.horarioDomingo || undefined,
-          } : undefined}
+          initialData={
+            editingEmpleado
+              ? {
+                  nombre: editingEmpleado.nombre,
+                  telefono: editingEmpleado.telefono,
+                  especialidades: editingEmpleado.especialidades,
+                  porcentajeComision: editingEmpleado.porcentajeComision,
+                  horarioLunes: editingEmpleado.horarioLunes || undefined,
+                  horarioMartes: editingEmpleado.horarioMartes || undefined,
+                  horarioMiercoles:
+                    editingEmpleado.horarioMiercoles || undefined,
+                  horarioJueves: editingEmpleado.horarioJueves || undefined,
+                  horarioViernes: editingEmpleado.horarioViernes || undefined,
+                  horarioSabado: editingEmpleado.horarioSabado || undefined,
+                  horarioDomingo: editingEmpleado.horarioDomingo || undefined,
+                }
+              : undefined
+          }
           onSubmit={handleSubmit}
           onCancel={() => {
             setIsModalOpen(false);
@@ -258,7 +260,6 @@ const handleConfirmarPago = async (data: {
           isLoading={isSubmitting}
         />
       </Modal>
-
       {/* Modal Detalle */}
       <Modal
         isOpen={isDetalleOpen}
@@ -284,10 +285,20 @@ const handleConfirmarPago = async (data: {
               setIsDetalleOpen(false);
               setEmpleadoSeleccionado(null);
             }}
+            // ✅ NUEVO: Refrescar datos después de conectar/desconectar
+            onActualizar={async () => {
+              await fetchEmpleados();
+              // Actualizar el empleado seleccionado con los nuevos datos
+              const empleadoActualizado = empleados.find(
+                (e) => e.id === empleadoSeleccionado.id
+              );
+              if (empleadoActualizado) {
+                setEmpleadoSeleccionado(empleadoActualizado);
+              }
+            }}
           />
         )}
       </Modal>
-
       {/* ✅ NUEVO: Modal Comisiones */}
       {empleadoComisiones && (
         <ComisionesModal
@@ -300,7 +311,6 @@ const handleConfirmarPago = async (data: {
           onRegistrarPago={handleRegistrarPago}
         />
       )}
-
       {/* ✅ NUEVO: Modal Registrar Pago */}
       {empleadoComisiones && comisionPendiente && (
         <RegistrarPagoComisionModal

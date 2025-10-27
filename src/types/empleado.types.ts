@@ -5,12 +5,22 @@ export interface Horario {
   fin: string;    // "18:00"
 }
 
+// src/types/empleado.types.ts - Agregar estas propiedades
+
 export interface Empleado {
   id: string;
   nombre: string;
   telefono: string;
   especialidades: string[];
-  porcentajeComision: number; // ✅ NUEVO
+  porcentajeComision: number;
+  
+  // ✅ NUEVO: Google Calendar
+  googleCalendarId?: string | null;
+  googleAccessToken?: string | null;
+  googleRefreshToken?: string | null;
+  googleTokenExpiry?: string | null;
+  calendarioSincronizado: boolean;
+  
   horarioLunes: Horario | null;
   horarioMartes: Horario | null;
   horarioMiercoles: Horario | null;
