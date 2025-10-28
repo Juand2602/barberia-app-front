@@ -1,0 +1,73 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  release:
+    runs-on: windows-latest
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+      
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: 📦 Install dependencies
+        run: npm ci
+      
+      - name: 🗄️ Generate Prisma Client
+        run: npm run prisma:generate
+      
+      - name: 🔨 Build frontend
+        run: npm run build:vite
+        
+      - name: 🔧 Build Electron
+        run: npm run build:electron
+      
+      - name: 📱 Build and publish app
+        run: npm run dist:win
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+      
+      - name: 📋 Get version
+        id: version
+        run: |
+          $version = node -p "require('./package.json').version"
+          echo "VERSION=$version" >> $env:GITHUB_OUTPUT
+        shell: pwsh
+      
+      - name: 🚀 Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            release/*.exe
+            release/*.yml
+            release/*.yaml
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+          body: |
+            ## 🎉 Versión ${{ steps.version.outputs.VERSION }}
+            
+            ### 📥 Instalación
+            1. Descarga el archivo `.exe`
+            2. Ejecuta el instalador
+            3. Sigue las instrucciones
+            
+            ### 🔄 Actualización automática
+            Si ya tienes la aplicación instalada, se actualizará automáticamente al iniciar.
+            
+            ### 📝 Cambios
+            Ver notas de lanzamiento automáticas abajo.
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: ✅ Success
+        run: echo "✅ Release v${{ steps.version.outputs.VERSION }} created successfully!"
