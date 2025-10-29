@@ -1,4 +1,4 @@
-// src/components/transacciones/ImprimirTicket.tsx - CON LOGO (AJUSTADO ESPACIADO)
+// src/components/transacciones/ImprimirTicket.tsx
 
 import React, { useRef } from 'react';
 import { format } from 'date-fns';
@@ -7,6 +7,10 @@ import { Printer, X } from 'lucide-react';
 import { Transaccion } from '@/types/transaccion.types';
 import { Button } from '@components/ui/Button';
 import { Modal } from '@components/ui/Modal';
+
+// 1. DEFINE LA URL DEL LOGO DEL TICKET USANDO EL MÉTODO ROBUSTO
+// Asumimos que el logo para tickets es 'logo.png' en 'src/assets/images/'
+const ticketLogoUrl = new URL('../../assets/logo.png', import.meta.url).href;
 
 interface ImprimirTicketProps {
   isOpen: boolean;
@@ -58,14 +62,12 @@ export const ImprimirTicket: React.FC<ImprimirTicketProps> = ({
           padding: 5mm;
           box-sizing: border-box;
         }
-
-        /* --- Ajustes para acercar logo y título --- */
         .logo-container {
           text-align: center;
-          margin-bottom: 0px; /* reducido */
+          margin-bottom: 0px;
         }
         .logo-container img {
-          width: 50px; /* un poco más pequeño para evitar empujar */
+          width: 50px;
           height: auto;
           margin: 0 auto;
           display: block;
@@ -73,13 +75,13 @@ export const ImprimirTicket: React.FC<ImprimirTicketProps> = ({
         .header { 
           text-align: center; 
           border-bottom: 1px dashed #000; 
-          padding-bottom: 2px; /* reducido */
-          margin-bottom: 4px;  /* reducido */
+          padding-bottom: 2px;
+          margin-bottom: 4px;
         }
         .title { 
           font-size: 16px; 
           font-weight: bold;
-          margin-top: 0px; /* pequeño ajuste para pegar con el logo */
+          margin-top: 0px;
         }
         .subtitle { 
           font-size: 10px; 
@@ -107,6 +109,9 @@ export const ImprimirTicket: React.FC<ImprimirTicketProps> = ({
       </style>
     `;
 
+    // 2. REEMPLAZA EL SRC DEL LOGO EN EL HTML A IMPRIMIR CON LA URL CORRECTA
+    const printableContent = contenido.innerHTML.replace(/src="[^"]*"/, `src="${ticketLogoUrl}"`);
+
     ventana.document.write(`
       <!DOCTYPE html>
       <html>
@@ -117,7 +122,7 @@ export const ImprimirTicket: React.FC<ImprimirTicketProps> = ({
         </head>
         <body>
           <div class="ticket-container">
-            ${contenido.innerHTML}
+            ${printableContent}
           </div>
         </body>
       </html>
@@ -160,19 +165,16 @@ export const ImprimirTicket: React.FC<ImprimirTicketProps> = ({
             transformOrigin: 'top center'
           }}
         >
-          {/* ✅ LOGO */}
+          {/* Logo para la vista previa */}
           <div 
             className="logo-container" 
-            style={{ textAlign: 'center', marginBottom: '2px' }} /* reducido */
+            style={{ textAlign: 'center', marginBottom: '2px' }}
           >
             <img 
-              src="/logo.png" 
+              // 3. USA LA VARIABLE ticketLogoUrl AQUÍ TAMBIÉN PARA LA VISTA PREVIA
+              src={ticketLogoUrl}
               alt="M Barberia" 
-              style={{ width: '80px', height: 'auto', margin: '0 auto', display: 'block' }} /* tamaño reducido y display block */
-              onError={(e) => {
-                // Si falla al cargar, ocultar la imagen
-                (e.target as HTMLImageElement).style.display = 'none';
-              }}
+              style={{ width: '80px', height: 'auto', margin: '0 auto', display: 'block' }}
             />
           </div>
 
@@ -182,8 +184,8 @@ export const ImprimirTicket: React.FC<ImprimirTicketProps> = ({
             style={{ 
               textAlign: 'center', 
               borderBottom: '1px dashed #000', 
-              paddingBottom: '4px', /* reducido */
-              marginBottom: '4px'  /* reducido */
+              paddingBottom: '4px',
+              marginBottom: '4px'
             }}
           >
             <div className="title" style={{ marginTop: '4px' }}>Madison MVP Barbería</div>

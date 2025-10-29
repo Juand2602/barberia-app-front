@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'; // ← CAMBIADO
 import { Layout } from '@components/layout/Layout';
 import { ClientesPage } from '@pages/Clientes/ClientesPage';
 import { ServiciosPage } from '@pages/Servicios/ServiciosPage';
@@ -23,8 +23,8 @@ const ComingSoon: React.FC<{ title: string }> = ({ title }) => (
 
 function App() {
   return (
-    <BrowserRouter>
-     <UpdateNotifier />
+    <HashRouter>  {/* ← CAMBIADO de BrowserRouter a HashRouter */}
+      <UpdateNotifier />
       <Layout>
         <Routes>
           <Route path="/" element={<DashboardPage />} />
@@ -39,7 +39,7 @@ function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Layout>
-    </BrowserRouter>
+    </HashRouter>
   );
 }
 

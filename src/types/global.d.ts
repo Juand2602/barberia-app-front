@@ -1,9 +1,5 @@
 // src/types/global.d.ts
 
-// Primero, asegúrate de que los tipos que usa la interfaz estén disponibles.
-// Puedes copiarlos aquí o importarlos desde preload.ts si lo configuras como módulo.
-// Lo más sencillo es copiarlos.
-
 export interface SystemInfo {
   machineId: string;
   hostname: string;
@@ -18,6 +14,28 @@ export interface UpdateStatus {
   version?: string;
   percent?: number;
   error?: string;
+}
+
+// Declaraciones para importar imágenes
+declare module '*.png' {
+  const value: string;
+  export default value;
+}
+declare module '*.jpg' {
+  const value: string;
+  export default value;
+}
+declare module '*.jpeg' {
+  const value: string;
+  export default value;
+}
+declare module '*.gif' {
+  const value: string;
+  export default value;
+}
+declare module '*.svg' {
+  const value: string;
+  export default value;
 }
 
 // Ahora, la declaración global que le interesa a TypeScript
@@ -36,5 +54,4 @@ declare global {
   }
 }
 
-// No olvides esta línea para que el archivo sea tratado como un módulo.
 export {};

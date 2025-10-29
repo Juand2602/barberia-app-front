@@ -11,10 +11,9 @@ const isDev = process.env.NODE_ENV === 'development';
 // ============================
 // CONFIGURACIÓN AUTO-UPDATER
 // ============================
-autoUpdater.autoDownload = false; // Usuario decide cuándo descargar
+autoUpdater.autoDownload = false;
 autoUpdater.autoInstallOnAppQuit = true;
 
-// Logs para debugging
 autoUpdater.logger = {
   info: (msg) => console.log('[AutoUpdater]', msg),
   warn: (msg) => console.warn('[AutoUpdater]', msg),
@@ -29,7 +28,6 @@ function getMachineId(): string {
   const networkInterfaces = os.networkInterfaces();
   let macAddress = '';
 
-  // Buscar primera MAC address válida
   Object.keys(networkInterfaces).forEach(key => {
     const iface = networkInterfaces[key]?.find(
       (item) => !item.internal && item.mac !== '00:00:00:00:00:00'
@@ -39,11 +37,9 @@ function getMachineId(): string {
     }
   });
 
-  // Combinar con hostname para más unicidad
   const hostname = os.hostname();
   const data = `${macAddress}-${hostname}`;
   
-  // Generar hash SHA-256
   return crypto.createHash('sha256').update(data).digest('hex');
 }
 
@@ -60,8 +56,6 @@ function getSystemInfo() {
 // ============================
 // IPC HANDLERS
 // ============================
-
-// Para licencias
 ipcMain.handle('get-machine-id', () => {
   return getMachineId();
 });
@@ -70,7 +64,6 @@ ipcMain.handle('get-system-info', () => {
   return getSystemInfo();
 });
 
-// Para auto-updater
 ipcMain.on('check-for-updates', () => {
   if (!isDev) {
     console.log('🔍 Verificando actualizaciones...');
@@ -147,9 +140,7 @@ autoUpdater.on('error', (error) => {
 // ============================
 // CREAR VENTANA
 // ============================
-// La función ya no necesita ser 'async' porque no espera a un servidor.
 function createWindow() {
-
   mainWindow = new BrowserWindow({
     width: 1400,
     height: 900,
@@ -161,29 +152,59 @@ function createWindow() {
       preload: path.join(__dirname, 'preload.js'),
     },
     title: 'Barbería App',
-    icon: path.join(__dirname, '../build/icons/win/icon.ico'),
+    show: false, // No mostrar hasta que esté lista
   });
 
-  // Cargar la app
+  // ============================
+  // CARGAR LA APP
+  // ============================
   if (isDev) {
+    // Desarrollo: Vite dev server
+    console.log('🔧 Modo desarrollo');
     mainWindow.loadURL('http://localhost:5173');
     mainWindow.webContents.openDevTools();
   } else {
-    mainWindow.loadFile(path.join(__dirname, '../dist/index.html'));
+    // Producción: Archivos compilados
+    const indexPath = path.join(__dirname, '../dist/index.html');
+    
+    console.log('📦 Modo producción');
+    console.log('📂 __dirname:', __dirname);
+    console.log('📂 Cargando desde:', indexPath);
+    
+    mainWindow.loadFile(indexPath).catch(err => {
+      console.error('❌ Error cargando index.html:', err);
+    });
   }
+
+  // Mostrar ventana cuando esté lista
+  mainWindow.once('ready-to-show', () => {
+    console.log('✅ Ventana lista para mostrar');
+    mainWindow?.show();
+    
+    // Verificar actualizaciones después de 3 segundos
+    if (!isDev) {
+      console.log('🚀 Programando verificación de actualizaciones...');
+      setTimeout(() => {
+        autoUpdater.checkForUpdates();
+      }, 3000);
+    }
+  });
+
+  // Debug: Capturar errores de carga
+  mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription, validatedURL) => {
+    console.error('❌ Fallo al cargar:');
+    console.error('   URL:', validatedURL);
+    console.error('   Error:', errorCode, '-', errorDescription);
+  });
+
+  // Debug: Ver mensajes de consola del frontend
+  mainWindow.webContents.on('console-message', (event, level, message, line, sourceId) => {
+    const levels = ['verbose', 'info', 'warning', 'error'];
+    console.log(`[Frontend ${levels[level]}]:`, message);
+  });
 
   mainWindow.on('closed', () => {
     mainWindow = null;
-  });
-
-  // Verificar actualizaciones cuando la ventana esté lista
-  mainWindow.once('ready-to-show', () => {
-    if (!isDev) {
-      console.log('🚀 Verificando actualizaciones al iniciar...');
-      setTimeout(() => {
-        autoUpdater.checkForUpdates();
-      }, 3000); // Esperar 3 segundos para que la app cargue
-    }
   });
 }
 
@@ -193,7 +214,6 @@ function createWindow() {
 app.whenReady().then(createWindow);
 
 app.on('window-all-closed', () => {
-
   if (process.platform !== 'darwin') {
     app.quit();
   }

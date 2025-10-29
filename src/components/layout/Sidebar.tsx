@@ -12,6 +12,8 @@ import {
 } from "lucide-react";
 import { clsx } from "clsx";
 
+const logo = new URL('../../assets/logo2.png', import.meta.url).href;
+
 interface NavItem {
   name: string;
   path: string;
@@ -36,7 +38,8 @@ export const Sidebar: React.FC = () => {
      <div className="flex flex-col items-center justify-center px-6 py-6 border-b border-gray-800">
   <div style={{ width: 150, height: 100 }} className="flex items-center justify-center overflow-hidden mb-0">
     <img
-      src="/Logo_Blanco_Rojo.png"
+      // 2. USA LA VARIABLE IMPORTADA EN EL ATRIBUTO SRC
+      src={logo}
       alt="M Barberia"
       style={{ width: 350, height: 350, objectFit: 'contain', display: 'block' }}
     />
