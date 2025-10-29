@@ -46,7 +46,6 @@ jobs:
           files: |
             release/*.exe
             release/*.yml
-            release/*.yaml
           draft: false
           prerelease: false
           generate_release_notes: true
@@ -64,7 +63,7 @@ jobs:
             ### 📝 Cambios
             Ver notas de lanzamiento automáticas abajo.
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
       
       - name: ✅ Success
         run: echo "✅ Release v${{ steps.version.outputs.VERSION }} created successfully!"
