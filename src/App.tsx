@@ -9,6 +9,7 @@ import { CitasPage } from '@pages/Citas/CitasPage';
 import { TransaccionesPage } from '@pages/Transacciones/TransaccionesPage';
 import  CierreCajaPage  from '@pages/CierreCaja/CierreCajaPage';
 import ReportesPage  from '@pages/Reportes/ReportesPage';
+import { UpdateNotifier } from './components/UpdateNotifier';
 
 // Página temporal para rutas no implementadas
 const ComingSoon: React.FC<{ title: string }> = ({ title }) => (
@@ -23,6 +24,7 @@ const ComingSoon: React.FC<{ title: string }> = ({ title }) => (
 function App() {
   return (
     <BrowserRouter>
+     <UpdateNotifier />
       <Layout>
         <Routes>
           <Route path="/" element={<DashboardPage />} />
