@@ -161,7 +161,7 @@ function createWindow() {
       preload: path.join(__dirname, 'preload.js'),
     },
     title: 'Barbería App',
-    icon: path.join(__dirname, '../build/icon.png'),
+    icon: path.join(__dirname, '../build/icons/win/icon.ico'),
   });
 
   // Cargar la app
