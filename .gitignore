@@ -10,7 +10,6 @@ coverage/
 dist/
 dist-electron/
 release/
-build/
 
 # Base de datos
 prisma/database.db
