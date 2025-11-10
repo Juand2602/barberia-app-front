@@ -3,8 +3,11 @@ import react from '@vitejs/plugin-react';
 import path from 'path';
 
 export default defineConfig(({ mode }) => {
-  // Cargar variables de entorno
+  // Cargar variables de entorno según el modo (development o production)
   const env = loadEnv(mode, process.cwd(), '');
+  
+  console.log('🔧 Vite Mode:', mode);
+  console.log('🔌 API URL:', env.VITE_API_URL);
 
   return {
     plugins: [react()],
@@ -44,14 +47,14 @@ export default defineConfig(({ mode }) => {
           },
         },
       },
-      // Sin sourcemaps en producción
-      sourcemap: false,
+      // Sin sourcemaps en producción para reducir tamaño
+      sourcemap: mode === 'development',
     },
     
-    // Variables de entorno
+    // Variables de entorno - Se inyectan en tiempo de build
     define: {
       'import.meta.env.VITE_API_URL': JSON.stringify(env.VITE_API_URL),
-      'import.meta.env.VITE_ENV': JSON.stringify(env.VITE_ENV),
+      'import.meta.env.VITE_ENV': JSON.stringify(env.VITE_ENV || mode),
     },
   };
 });

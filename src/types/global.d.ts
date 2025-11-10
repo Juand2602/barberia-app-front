@@ -1,5 +1,25 @@
 // src/types/global.d.ts
 
+/// <reference types="vite/client" />
+
+// ============================
+// TIPOS DE VITE ENV
+// ============================
+interface ImportMetaEnv {
+  readonly VITE_API_URL: string;
+  readonly VITE_ENV: string;
+  readonly DEV: boolean;
+  readonly PROD: boolean;
+  readonly MODE: string;
+}
+
+interface ImportMeta {
+  readonly env: ImportMetaEnv;
+}
+
+// ============================
+// TIPOS DE ELECTRON
+// ============================
 export interface SystemInfo {
   machineId: string;
   hostname: string;
@@ -16,7 +36,9 @@ export interface UpdateStatus {
   error?: string;
 }
 
-// Declaraciones para importar imágenes
+// ============================
+// MÓDULOS DE IMÁGENES
+// ============================
 declare module '*.png' {
   const value: string;
   export default value;
@@ -38,7 +60,9 @@ declare module '*.svg' {
   export default value;
 }
 
-// Ahora, la declaración global que le interesa a TypeScript
+// ============================
+// DECLARACIÓN GLOBAL WINDOW
+// ============================
 declare global {
   interface Window {
     electron: {
