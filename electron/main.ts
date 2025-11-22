@@ -3,12 +3,12 @@ import { autoUpdater } from 'electron-updater';
 import path from 'path';
 import os from 'os';
 import crypto from 'crypto';
-import express from 'express'; // ✅ NUEVO
-import { createServer } from 'http'; // ✅ NUEVO
+import express from 'express';
+import { createServer } from 'http';
 
 let mainWindow: BrowserWindow | null = null;
-let localServer: any = null; // ✅ NUEVO
-const PRODUCTION_PORT = 3456; // ✅ Puerto para producción
+let localServer: any = null;
+const PRODUCTION_PORT = 3456;
 
 const isDev = process.env.NODE_ENV === 'development';
 
@@ -58,7 +58,7 @@ function getSystemInfo() {
 }
 
 // ============================
-// ✅ NUEVO: SERVIDOR LOCAL PARA PRODUCCIÓN
+// SERVIDOR LOCAL PARA PRODUCCIÓN
 // ============================
 function startLocalServer(): Promise<number> {
   return new Promise((resolve, reject) => {
@@ -85,7 +85,6 @@ function startLocalServer(): Promise<number> {
     localServer.on('error', (error: any) => {
       if (error.code === 'EADDRINUSE') {
         console.warn(`⚠️ Puerto ${PRODUCTION_PORT} en uso, intentando siguiente...`);
-        // Si el puerto está en uso, intentar con el siguiente
         const nextPort = PRODUCTION_PORT + 1;
         localServer.listen(nextPort, 'localhost', () => {
           console.log(`✅ Servidor local corriendo en http://localhost:${nextPort}`);
@@ -204,12 +203,10 @@ async function createWindow() {
   // CARGAR LA APP
   // ============================
   if (isDev) {
-    // Desarrollo: Vite dev server
     console.log('🔧 Modo desarrollo');
     mainWindow.loadURL('http://localhost:5173');
     mainWindow.webContents.openDevTools();
   } else {
-    // ✅ PRODUCCIÓN: Iniciar servidor local y cargar desde localhost
     console.log('📦 Modo producción - Iniciando servidor local...');
     
     try {
@@ -253,8 +250,6 @@ async function createWindow() {
 
   mainWindow.on('closed', () => {
     mainWindow = null;
-    
-    // ✅ Cerrar servidor local cuando se cierra la ventana
     if (localServer) {
       localServer.close(() => {
         console.log('🔴 Servidor local cerrado');
@@ -269,7 +264,6 @@ async function createWindow() {
 app.whenReady().then(createWindow);
 
 app.on('window-all-closed', () => {
-  // ✅ Cerrar servidor local cuando se cierra la app
   if (localServer) {
     localServer.close();
   }
@@ -285,7 +279,6 @@ app.on('activate', () => {
   }
 });
 
-// ✅ Cerrar servidor local cuando la app termina
 app.on('before-quit', () => {
   if (localServer) {
     localServer.close();

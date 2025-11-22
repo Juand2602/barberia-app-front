@@ -79,12 +79,16 @@
     "files": [
       "dist/**/*",
       "dist-electron/**/*",
-      "node_modules/**/*",
       "package.json"
     ],
+    "extraResources": [
+      {
+        "from": "node_modules/express",
+        "to": "node_modules/express"
+      }
+    ],
     "asarUnpack": [
-      "dist/**",
-      "node_modules/**"
+      "dist/**"
     ],
     "win": {
       "target": [
