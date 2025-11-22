@@ -1,5 +1,7 @@
+// src/App.tsx - ACTUALIZADO CON INVENTARIO
+
 import React from 'react';
-import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'; // ← CAMBIADO
+import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Layout } from '@components/layout/Layout';
 import { ClientesPage } from '@pages/Clientes/ClientesPage';
 import { ServiciosPage } from '@pages/Servicios/ServiciosPage';
@@ -9,6 +11,7 @@ import { CitasPage } from '@pages/Citas/CitasPage';
 import { TransaccionesPage } from '@pages/Transacciones/TransaccionesPage';
 import  CierreCajaPage  from '@pages/CierreCaja/CierreCajaPage';
 import ReportesPage  from '@pages/Reportes/ReportesPage';
+import { InventarioPage } from '@pages/Inventario/InventarioPage'; // ✅ NUEVO
 import { UpdateNotifier } from './components/UpdateNotifier';
 
 // Página temporal para rutas no implementadas
@@ -23,7 +26,7 @@ const ComingSoon: React.FC<{ title: string }> = ({ title }) => (
 
 function App() {
   return (
-    <HashRouter>  {/* ← CAMBIADO de BrowserRouter a HashRouter */}
+    <HashRouter>
       <UpdateNotifier />
       <Layout>
         <Routes>
@@ -33,6 +36,7 @@ function App() {
           <Route path="/servicios" element={<ServiciosPage />} />
           <Route path="/empleados" element={<EmpleadosPage />} />
           <Route path="/transacciones" element={<TransaccionesPage />} />
+          <Route path="/inventario" element={<InventarioPage />} /> {/* ✅ NUEVO */}
           <Route path="/cierre-caja" element={<CierreCajaPage />} />
           <Route path="/reportes" element={<ReportesPage />} />
           <Route path="/configuracion" element={<ComingSoon title="Configuración" />} />

@@ -1,4 +1,4 @@
-// src/components/transacciones/RecibirPagoModal.tsx - ACTUALIZADO
+// src/components/transacciones/RecibirPagoModal.tsx - ACTUALIZADO CON PAGO MIXTO
 
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
@@ -24,12 +24,14 @@ interface ItemFormulario extends TransaccionItemDTO {
   nombreServicio?: string;
 }
 
-type MetodoPago = 'EFECTIVO' | 'TRANSFERENCIA';
+type MetodoPago = 'EFECTIVO' | 'TRANSFERENCIA' | 'MIXTO'; // ✅ AGREGAR MIXTO
 
 interface FormValues {
   metodoPago: MetodoPago;
   referencia?: string;
   empleadoId?: string;
+  montoEfectivo?: number;      // ✅ NUEVO
+  montoTransferencia?: number; // ✅ NUEVO
 }
 
 export const RecibirPagoModal: React.FC<RecibirPagoModalProps> = ({
@@ -43,19 +45,13 @@ export const RecibirPagoModal: React.FC<RecibirPagoModalProps> = ({
   const [items, setItems] = useState<ItemFormulario[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // ✅ NUEVA LÓGICA: Determinar el empleado predeterminado
   const getEmpleadoPredeterminado = (): string => {
-    // 1. Si la transacción ya tiene empleado asignado, usar ese
     if (transaccion.empleadoId) {
       return transaccion.empleadoId;
     }
-    
-    // 2. Si viene de una cita, usar el empleado de la cita
     if (transaccion.cita?.empleadoId) {
       return transaccion.cita.empleadoId;
     }
-    
-    // 3. Si no hay ninguno, dejar vacío
     return '';
   };
 
@@ -63,17 +59,20 @@ export const RecibirPagoModal: React.FC<RecibirPagoModalProps> = ({
     defaultValues: {
       metodoPago: 'EFECTIVO',
       referencia: '',
-      empleadoId: '', // Se establecerá en el useEffect
+      empleadoId: '',
+      montoEfectivo: undefined,
+      montoTransferencia: undefined,
     },
   });
 
   const metodoPago = (watch('metodoPago') ?? 'EFECTIVO') as MetodoPago;
+  const montoEfectivo = watch('montoEfectivo') || 0;
+  const montoTransferencia = watch('montoTransferencia') || 0;
 
   useEffect(() => {
     if (isOpen) {
       loadData();
       
-      // Cargar items existentes
       setItems(
         transaccion.items.map((item, idx) => ({
           tempId: `${item.id}-${idx}`,
@@ -87,7 +86,6 @@ export const RecibirPagoModal: React.FC<RecibirPagoModalProps> = ({
     }
   }, [isOpen, transaccion]);
 
-  // ✅ ESTABLECER EL EMPLEADO PREDETERMINADO después de cargar empleados
   useEffect(() => {
     if (isOpen && empleados.length > 0) {
       const empleadoId = getEmpleadoPredeterminado();
@@ -182,11 +180,33 @@ export const RecibirPagoModal: React.FC<RecibirPagoModalProps> = ({
       return;
     }
 
+    // ✅ VALIDACIÓN PARA PAGO MIXTO
+    if (data.metodoPago === 'MIXTO') {
+      const total = calcularTotal();
+      const efectivo = data.montoEfectivo || 0;
+      const transferencia = data.montoTransferencia || 0;
+
+      if (efectivo <= 0 || transferencia <= 0) {
+        alert('Para pago mixto, debe especificar montos mayores a cero en efectivo y transferencia');
+        return;
+      }
+
+      if (Math.abs((efectivo + transferencia) - total) > 0.01) {
+        alert(
+          `La suma de efectivo ($${efectivo.toLocaleString()}) y transferencia ($${transferencia.toLocaleString()}) debe ser igual al total ($${total.toLocaleString()})`
+        );
+        return;
+      }
+    }
+
     setIsSubmitting(true);
     try {
       const pagoData: MarcarPagadaDTO = {
         metodoPago: data.metodoPago,
-        referencia: data.metodoPago === 'TRANSFERENCIA' ? data.referencia : undefined,
+        referencia: (data.metodoPago === 'TRANSFERENCIA' || data.metodoPago === 'MIXTO') ? data.referencia : undefined,
+        // ✅ NUEVO: Incluir montos solo si es pago mixto
+        montoEfectivo: data.metodoPago === 'MIXTO' ? data.montoEfectivo : undefined,
+        montoTransferencia: data.metodoPago === 'MIXTO' ? data.montoTransferencia : undefined,
       };
 
       const itemsDTO: TransaccionItemDTO[] = items.map(({ servicioId, cantidad, precioUnitario, subtotal }) => ({
@@ -394,7 +414,7 @@ export const RecibirPagoModal: React.FC<RecibirPagoModalProps> = ({
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Método de Pago *
           </label>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-3 gap-3">
             <label
               className={`flex items-center justify-center gap-2 p-4 border-2 rounded-lg cursor-pointer transition-colors ${
                 metodoPago === "EFECTIVO"
@@ -427,11 +447,96 @@ export const RecibirPagoModal: React.FC<RecibirPagoModalProps> = ({
               />
               <span className="font-medium">Transferencia</span>
             </label>
+
+            {/* ✅ NUEVO: Opción pago mixto */}
+            <label
+              className={`flex items-center justify-center gap-2 p-4 border-2 rounded-lg cursor-pointer transition-colors ${
+                metodoPago === "MIXTO"
+                  ? "bg-blue-50 border-blue-500 text-blue-900"
+                  : "bg-white border-gray-300 hover:border-gray-400"
+              }`}
+            >
+              <input
+                type="radio"
+                value="MIXTO"
+                {...register("metodoPago")}
+                className="w-4 h-4"
+              />
+              <DollarSign size={20} />
+              <span className="font-medium">Mixto</span>
+            </label>
           </div>
         </div>
 
+        {/* ✅ NUEVO: Campos para pago mixto */}
+        {metodoPago === 'MIXTO' && (
+          <div className="bg-amber-50 p-4 rounded-lg space-y-4 border-2 border-amber-200">
+            <h4 className="font-semibold text-gray-900 flex items-center gap-2">
+              <DollarSign size={18} />
+              Desglose de Pago Mixto
+            </h4>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Monto en Efectivo *
+                </label>
+                <input
+                  type="number"
+                  step="1000"
+                  {...register('montoEfectivo', {
+                    required: metodoPago === 'MIXTO',
+                    valueAsNumber: true,
+                  })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="0"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Monto en Transferencia *
+                </label>
+                <input
+                  type="number"
+                  step="1000"
+                  {...register('montoTransferencia', {
+                    required: metodoPago === 'MIXTO',
+                    valueAsNumber: true,
+                  })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="0"
+                />
+              </div>
+            </div>
+
+            {/* Verificación visual */}
+            <div className="bg-white p-3 rounded-lg border border-amber-300">
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-gray-600">Total a pagar:</span>
+                <span className="font-bold">${calcularTotal().toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between items-center text-sm mt-1">
+                <span className="text-gray-600">Efectivo + Transferencia:</span>
+                <span
+                  className={`font-bold ${
+                    Math.abs(montoEfectivo + montoTransferencia - calcularTotal()) < 0.01
+                      ? 'text-green-600'
+                      : 'text-red-600'
+                  }`}
+                >
+                  ${(montoEfectivo + montoTransferencia).toLocaleString()}
+                </span>
+              </div>
+              {Math.abs(montoEfectivo + montoTransferencia - calcularTotal()) >= 0.01 && (
+                <p className="text-xs text-red-600 mt-2">⚠️ La suma debe ser igual al total</p>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Referencia */}
-        {metodoPago === "TRANSFERENCIA" && (
+        {(metodoPago === "TRANSFERENCIA" || metodoPago === "MIXTO") && (
           <Input
             label="Número de Referencia"
             {...register("referencia")}

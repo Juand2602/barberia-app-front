@@ -1,3 +1,5 @@
+// src/components/transacciones/TransaccionDetalle.tsx - ACTUALIZADO CON PAGO MIXTO
+
 import React from 'react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -9,6 +11,8 @@ import {
   Package,
   TrendingUp,
   TrendingDown,
+  DollarSign,
+  Banknote,
 } from 'lucide-react';
 import { Transaccion } from '@/types/transaccion.types';
 import { Badge } from '@components/ui/Badge';
@@ -33,6 +37,20 @@ export const TransaccionDetalle: React.FC<TransaccionDetalleProps> = ({
     }).format(amount);
   };
 
+  // ✅ NUEVO: Función para obtener el badge del método de pago
+  const getMetodoPagoBadge = () => {
+    switch (transaccion.metodoPago) {
+      case 'EFECTIVO':
+        return <Badge variant="success">EFECTIVO</Badge>;
+      case 'TRANSFERENCIA':
+        return <Badge variant="info">TRANSFERENCIA</Badge>;
+      case 'MIXTO':
+        return <Badge variant="warning">MIXTO</Badge>;
+      default:
+        return <Badge variant="default">{transaccion.metodoPago}</Badge>;
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -51,11 +69,7 @@ export const TransaccionDetalle: React.FC<TransaccionDetalleProps> = ({
                 EGRESO
               </Badge>
             )}
-            <Badge
-              variant={transaccion.metodoPago === 'EFECTIVO' ? 'success' : 'info'}
-            >
-              {transaccion.metodoPago}
-            </Badge>
+            {getMetodoPagoBadge()}
           </div>
         </div>
       </div>
@@ -76,6 +90,44 @@ export const TransaccionDetalle: React.FC<TransaccionDetalleProps> = ({
           {formatCurrency(transaccion.total)}
         </p>
       </div>
+
+      {/* ✅ NUEVO: Desglose de pago mixto */}
+      {transaccion.metodoPago === 'MIXTO' && transaccion.montoEfectivo !== null && transaccion.montoTransferencia !== null && (
+        <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-4 rounded-lg border-2 border-blue-200">
+          <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+            <DollarSign size={18} />
+            Desglose de Pago Mixto
+          </h4>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="bg-white p-3 rounded-lg">
+              <div className="flex items-center gap-2 text-gray-600 mb-1">
+                <Banknote size={16} className="text-green-600" />
+                <span className="text-sm">Efectivo</span>
+              </div>
+              <p className="text-xl font-bold text-green-600">
+                {formatCurrency(transaccion.montoEfectivo)}
+              </p>
+            </div>
+            <div className="bg-white p-3 rounded-lg">
+              <div className="flex items-center gap-2 text-gray-600 mb-1">
+                <CreditCard size={16} className="text-purple-600" />
+                <span className="text-sm">Transferencia</span>
+              </div>
+              <p className="text-xl font-bold text-purple-600">
+                {formatCurrency(transaccion.montoTransferencia)}
+              </p>
+            </div>
+          </div>
+          <div className="mt-3 pt-3 border-t border-blue-200">
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-gray-600">Total:</span>
+              <span className="text-lg font-bold text-gray-900">
+                {formatCurrency(transaccion.montoEfectivo + transaccion.montoTransferencia)}
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Fecha */}
       <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
@@ -152,7 +204,7 @@ export const TransaccionDetalle: React.FC<TransaccionDetalleProps> = ({
               <h3 className="font-semibold text-gray-900">Concepto</h3>
             </div>
             <p className="font-medium text-gray-900 mb-1">{transaccion.concepto}</p>
-            <Badge variant="default">{transaccion.categoria}</Badge>
+            {transaccion.categoria && <Badge variant="default">{transaccion.categoria}</Badge>}
           </div>
         </>
       )}
@@ -160,7 +212,13 @@ export const TransaccionDetalle: React.FC<TransaccionDetalleProps> = ({
       {/* Método de Pago */}
       <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
         <CreditCard
-          className={transaccion.metodoPago === 'EFECTIVO' ? 'text-green-600' : 'text-purple-600'}
+          className={
+            transaccion.metodoPago === 'EFECTIVO' 
+              ? 'text-green-600' 
+              : transaccion.metodoPago === 'TRANSFERENCIA'
+              ? 'text-purple-600'
+              : 'text-blue-600'
+          }
           size={20}
         />
         <div className="flex-1">

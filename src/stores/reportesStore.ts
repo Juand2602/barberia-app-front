@@ -1,4 +1,4 @@
-// src/stores/reportesStore.ts
+// src/stores/reportesStore.ts - ACTUALIZADO CON INVENTARIO
 
 import { create } from 'zustand';
 import { reportesService } from '../services/reportes.service';
@@ -9,7 +9,8 @@ import type {
   ReporteVentasPorServicio,
   ReporteCitas,
   ReporteFinanciero,
-  ReporteClientes
+  ReporteClientes,
+  ReporteInventario, // ✅ NUEVO
 } from '../types/reporte.types';
 
 interface ReportesState {
@@ -21,6 +22,7 @@ interface ReportesState {
   reporteCitas: ReporteCitas | null;
   reporteFinanciero: ReporteFinanciero | null;
   reporteClientes: ReporteClientes | null;
+  reporteInventario: ReporteInventario | null; // ✅ NUEVO
 
   // Loading states
   loading: boolean;
@@ -34,6 +36,7 @@ interface ReportesState {
   fetchReporteCitas: (fechaInicio: Date, fechaFin: Date) => Promise<void>;
   fetchReporteFinanciero: (fechaInicio: Date, fechaFin: Date) => Promise<void>;
   fetchReporteClientes: (fechaInicio: Date, fechaFin: Date) => Promise<void>;
+  fetchReporteInventario: (fechaInicio: Date, fechaFin: Date) => Promise<void>; // ✅ NUEVO
   clearError: () => void;
 }
 
@@ -46,6 +49,7 @@ export const useReportesStore = create<ReportesState>((set) => ({
   reporteCitas: null,
   reporteFinanciero: null,
   reporteClientes: null,
+  reporteInventario: null, // ✅ NUEVO
   loading: false,
   error: null,
 
@@ -136,6 +140,20 @@ export const useReportesStore = create<ReportesState>((set) => ({
     } catch (error) {
       set({ 
         error: error instanceof Error ? error.message : 'Error al cargar reporte de clientes',
+        loading: false 
+      });
+    }
+  },
+
+  // ✅ NUEVO: Fetch reporte de inventario
+  fetchReporteInventario: async (fechaInicio: Date, fechaFin: Date) => {
+    set({ loading: true, error: null });
+    try {
+      const reporteInventario = await reportesService.getReporteInventario(fechaInicio, fechaFin);
+      set({ reporteInventario, loading: false });
+    } catch (error) {
+      set({ 
+        error: error instanceof Error ? error.message : 'Error al cargar reporte de inventario',
         loading: false 
       });
     }

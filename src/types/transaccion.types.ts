@@ -1,4 +1,4 @@
-// src/types/transaccion.types.ts - ACTUALIZADO
+// src/types/transaccion.types.ts - ACTUALIZADO CON PAGO MIXTO
 
 import { Cliente } from './cliente.types';
 import { Empleado } from './empleado.types';
@@ -6,7 +6,7 @@ import { Servicio } from './servicio.types';
 import { Cita } from './cita.types';
 
 export type TipoTransaccion = 'INGRESO' | 'EGRESO';
-export type MetodoPago = 'EFECTIVO' | 'TRANSFERENCIA' | 'PENDIENTE';
+export type MetodoPago = 'EFECTIVO' | 'TRANSFERENCIA' | 'MIXTO' | 'PENDIENTE'; // ✅ AGREGAR MIXTO
 export type EstadoPago = 'PENDIENTE' | 'PAGADO';
 
 export interface TransaccionItem {
@@ -20,7 +20,6 @@ export interface TransaccionItem {
   createdAt: string;
 }
 
-// ✅ ACTUALIZADO: Incluir empleado en la cita
 export interface Transaccion {
   id: string;
   tipo: TipoTransaccion;
@@ -35,9 +34,14 @@ export interface Transaccion {
   concepto: string | null;
   categoria: string | null;
   notas: string | null;
+  
+  // ✅ NUEVOS CAMPOS PARA PAGO MIXTO
+  montoEfectivo: number | null;
+  montoTransferencia: number | null;
+  
   cliente?: Cliente;
   empleado?: Empleado;
-  cita?: Cita & { empleado?: Empleado }; // ✅ Incluir empleado en la cita
+  cita?: Cita & { empleado?: Empleado };
   items: TransaccionItem[];
   createdAt: string;
   updatedAt: string;
@@ -63,6 +67,11 @@ export interface CreateTransaccionDTO {
   concepto?: string;
   categoria?: string;
   notas?: string;
+  
+  // ✅ NUEVOS CAMPOS PARA PAGO MIXTO
+  montoEfectivo?: number;
+  montoTransferencia?: number;
+  
   items: TransaccionItemDTO[];
 }
 
@@ -79,11 +88,19 @@ export interface UpdateTransaccionDTO {
   concepto?: string | null;
   categoria?: string | null;
   notas?: string | null;
+  
+  // ✅ NUEVOS CAMPOS PARA PAGO MIXTO
+  montoEfectivo?: number | null;
+  montoTransferencia?: number | null;
 }
 
 export interface MarcarPagadaDTO {
-  metodoPago: 'EFECTIVO' | 'TRANSFERENCIA';
+  metodoPago: 'EFECTIVO' | 'TRANSFERENCIA' | 'MIXTO'; // ✅ AGREGAR MIXTO
   referencia?: string;
+  
+  // ✅ NUEVOS CAMPOS PARA PAGO MIXTO
+  montoEfectivo?: number;
+  montoTransferencia?: number;
 }
 
 export interface TransaccionesEstadisticas {

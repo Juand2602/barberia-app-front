@@ -1,3 +1,5 @@
+// src/pages/Clientes/ClientesPage.tsx - ACTUALIZADO
+
 import React, { useEffect, useState } from "react";
 import { Plus, Search } from "lucide-react";
 import { useClientesStore } from "@stores/clientesStore";
@@ -75,13 +77,27 @@ export const ClientesPage: React.FC = () => {
     }
   };
 
+  // 🌟 NUEVO: Refrescar cliente después de actualizar sellos
+  const handleActualizarCliente = async () => {
+    if (clienteSeleccionado) {
+      try {
+        const clienteActualizado = await clientesService.getById(clienteSeleccionado.id);
+        setClienteSeleccionado(clienteActualizado as Cliente);
+        // También refrescar la lista
+        fetchClientes(searchTerm);
+      } catch (error) {
+        console.error('Error al refrescar cliente:', error);
+      }
+    }
+  };
+
   return (
     <div className="p-6 max-w-7xl mx-auto">
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-3xl font-bold text-gray-900">Clientes</h1>
         <p className="text-gray-600 mt-1">
-          Gestiona la información de tus clientes
+          Gestiona la información de tus clientes y su programa de fidelización
         </p>
       </div>
 
@@ -160,7 +176,7 @@ export const ClientesPage: React.FC = () => {
         />
       </Modal>
 
-      {/* Modal Detalle (nuevo) */}
+      {/* Modal Detalle */}
       <Modal
         isOpen={isDetalleOpen}
         onClose={() => {
@@ -174,7 +190,6 @@ export const ClientesPage: React.FC = () => {
           <ClienteDetalle
             cliente={clienteSeleccionado}
             onEliminar={async () => {
-              // cerrar modal y ejecutar la misma lógica de desactivar
               setIsDetalleOpen(false);
               await handleDelete(clienteSeleccionado);
               setClienteSeleccionado(null);
@@ -183,6 +198,7 @@ export const ClientesPage: React.FC = () => {
               setIsDetalleOpen(false);
               setClienteSeleccionado(null);
             }}
+            onActualizar={handleActualizarCliente}
           />
         )}
       </Modal>

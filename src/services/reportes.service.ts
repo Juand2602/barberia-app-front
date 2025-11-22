@@ -84,5 +84,15 @@ export const reportesService = {
     
     const response = await api.get(`/reportes/clientes?${params.toString()}`);
     return response.data;
-  }
+  },
+
+  async getReporteInventario(fechaInicio: Date, fechaFin: Date) {
+  const response = await api.get('/reportes/inventario', {
+    params: {
+      fechaInicio: fechaInicio.toISOString(),
+      fechaFin: fechaFin.toISOString(),
+    },
+  });
+  return response.data;
+}
 };

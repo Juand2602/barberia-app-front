@@ -1,4 +1,4 @@
-// src/pages/Reportes/ReportesPage.tsx
+// src/pages/Reportes/ReportesPage.tsx - COMPLETO CON INVENTARIO
 
 import React, { useState, useEffect } from "react";
 import {
@@ -7,7 +7,7 @@ import {
   Users,
   DollarSign,
   Calendar,
-  ShoppingBag,
+  Package,
   FileText,
   Download,
 } from "lucide-react";
@@ -29,7 +29,7 @@ const ReportesPage: React.FC = () => {
     dashboard,
     reporteVentas,
     reporteVentasPorEmpleado,
-    reporteVentasPorServicio,
+    reporteInventario,
     reporteCitas,
     reporteFinanciero,
     reporteClientes,
@@ -38,7 +38,7 @@ const ReportesPage: React.FC = () => {
     fetchDashboard,
     fetchReporteVentas,
     fetchReporteVentasPorEmpleado,
-    fetchReporteVentasPorServicio,
+    fetchReporteInventario,
     fetchReporteCitas,
     fetchReporteFinanciero,
     fetchReporteClientes,
@@ -59,8 +59,8 @@ const ReportesPage: React.FC = () => {
       case "ventas-empleado":
         fetchReporteVentasPorEmpleado(fechaInicio, fechaFin);
         break;
-      case "ventas-servicio":
-        fetchReporteVentasPorServicio(fechaInicio, fechaFin);
+      case "inventario":
+        fetchReporteInventario(fechaInicio, fechaFin);
         break;
       case "citas":
         fetchReporteCitas(fechaInicio, fechaFin);
@@ -88,12 +88,10 @@ const ReportesPage: React.FC = () => {
     try {
       const pdf = new PDFGenerator();
       
-      // Agregar encabezado (la marca de agua se agrega automáticamente)
       const reporteActual = reportes.find(r => r.id === reporteActivo);
       const fechaTexto = `Del ${format(fechaInicio, "dd/MM/yyyy")} al ${format(fechaFin, "dd/MM/yyyy")}`;
       await pdf.addHeader(reporteActual?.nombre || "Reporte", fechaTexto);
       
-      // Generar contenido según el tipo de reporte
       switch (reporteActivo) {
         case "dashboard":
           await generarPDFDashboard(pdf);
@@ -104,8 +102,8 @@ const ReportesPage: React.FC = () => {
         case "ventas-empleado":
           await generarPDFVentasEmpleado(pdf);
           break;
-        case "ventas-servicio":
-          await generarPDFVentasServicio(pdf);
+        case "inventario":
+          await generarPDFInventario(pdf);
           break;
         case "citas":
           await generarPDFCitas(pdf);
@@ -118,7 +116,6 @@ const ReportesPage: React.FC = () => {
           break;
       }
       
-      // Guardar el PDF
       pdf.save(`${reporteActual?.nombre || "Reporte"}_${format(new Date(), "dd-MM-yyyy_HH-mm")}.pdf`);
     } catch (error) {
       console.error("Error al generar PDF:", error);
@@ -131,7 +128,6 @@ const ReportesPage: React.FC = () => {
   const generarPDFDashboard = async (pdf: PDFGenerator) => {
     if (!dashboard) return;
     
-    // Resumen general
     pdf.addSection("Resumen General");
     pdf.addSummaryBoxes([
       { label: "Total Ventas", value: formatCurrency(dashboard.ventas.total), color: "#10b981" },
@@ -140,7 +136,6 @@ const ReportesPage: React.FC = () => {
       { label: "Empleado Top", value: dashboard.empleadoTop?.nombre || "N/A", color: "#6366f1" }
     ]);
     
-    // Servicios más vendidos
     pdf.addSection("Servicios Más Vendidos");
     const headers = ["#", "Servicio", "Cantidad", "Total"];
     const data = dashboard.serviciosMasVendidos.map((servicio, index) => [
@@ -155,7 +150,6 @@ const ReportesPage: React.FC = () => {
   const generarPDFVentas = async (pdf: PDFGenerator) => {
     if (!reporteVentas) return;
     
-    // Resumen
     pdf.addSection("Resumen de Ventas");
     pdf.addSummaryBoxes([
       { label: "Total Ingresos", value: formatCurrency(reporteVentas.resumen.totalIngresos), color: "#10b981" },
@@ -163,7 +157,6 @@ const ReportesPage: React.FC = () => {
       { label: "Promedio por Venta", value: formatCurrency(reporteVentas.resumen.promedioVenta), color: "#8b5cf6" }
     ]);
     
-    // Ingresos por método de pago
     pdf.addSection("Ingresos por Método de Pago");
     const headersMetodo = ["Método", "Transacciones", "Total"];
     const dataMetodo = Object.entries(reporteVentas.resumen.porMetodoPago).map(
@@ -175,7 +168,6 @@ const ReportesPage: React.FC = () => {
     );
     pdf.addTable(headersMetodo, dataMetodo);
     
-    // Detalle de transacciones - FILTRAR SOLO PAGADAS
     const transaccionesPagadas = reporteVentas.transacciones.filter(
       t => t.estadoPago === 'PAGADO'
     );
@@ -206,7 +198,6 @@ const ReportesPage: React.FC = () => {
     ]);
     pdf.addTable(headers, data);
     
-    // Detalle de servicios por empleado
     pdf.addSection("Servicios por Empleado");
     reporteVentasPorEmpleado.empleados.forEach((empleado) => {
       pdf.addText(`${empleado.nombre}:`, 12, true);
@@ -218,25 +209,43 @@ const ReportesPage: React.FC = () => {
     });
   };
 
-  const generarPDFVentasServicio = async (pdf: PDFGenerator) => {
-    if (!reporteVentasPorServicio) return;
+  const generarPDFInventario = async (pdf: PDFGenerator) => {
+    if (!reporteInventario) return;
     
-    pdf.addSection("Análisis por Servicio");
-    const headers = ["#", "Servicio", "Cantidad", "Total", "Promedio"];
-    const data = reporteVentasPorServicio.servicios.map((servicio, index) => [
+    pdf.addSection("Resumen de Inventario");
+    pdf.addSummaryBoxes([
+      { label: "Total Productos", value: reporteInventario.resumen.totalProductos.toString(), color: "#3b82f6" },
+      { label: "Stock Bajo", value: reporteInventario.resumen.productosStockBajo.toString(), color: "#ef4444" },
+      { label: "Valor Stock", value: formatCurrency(reporteInventario.resumen.valorTotalStock), color: "#8b5cf6" },
+      { label: "Ganancia", value: formatCurrency(reporteInventario.resumen.gananciaTotal), color: "#10b981" }
+    ]);
+    
+    pdf.addSection("Productos Más Vendidos");
+    const headers = ["#", "Producto", "Cantidad", "Ventas", "Ganancia"];
+    const data = reporteInventario.productosMasVendidos.map((prod, index) => [
       (index + 1).toString(),
-      servicio.nombre,
-      servicio.cantidadVendida.toString(),
-      formatCurrency(servicio.totalGenerado),
-      formatCurrency(servicio.totalGenerado / servicio.cantidadVendida)
+      prod.nombre,
+      prod.cantidadVendida.toString(),
+      formatCurrency(prod.totalVentas),
+      formatCurrency(prod.ganancia)
     ]);
     pdf.addTable(headers, data);
+    
+    if (reporteInventario.ventasPorCategoria.length > 0) {
+      pdf.addSection("Ventas por Categoría");
+      const headersCtg = ["Categoría", "Cantidad", "Total"];
+      const dataCtg = reporteInventario.ventasPorCategoria.map((cat) => [
+        cat.categoria,
+        cat.cantidad.toString(),
+        formatCurrency(cat.total)
+      ]);
+      pdf.addTable(headersCtg, dataCtg);
+    }
   };
 
   const generarPDFCitas = async (pdf: PDFGenerator) => {
     if (!reporteCitas) return;
     
-    // Resumen
     pdf.addSection("Resumen de Citas");
     pdf.addSummaryBoxes([
       { label: "Total Citas", value: reporteCitas.resumen.totalCitas.toString(), color: "#3b82f6" },
@@ -245,7 +254,6 @@ const ReportesPage: React.FC = () => {
       { label: "Pendientes", value: ((reporteCitas.resumen.porEstado.PENDIENTE || 0) + (reporteCitas.resumen.porEstado.CONFIRMADA || 0)).toString(), color: "#f59e0b" }
     ]);
     
-    // Ocupación por empleado
     pdf.addSection("Ocupación por Empleado");
     const headers = ["Empleado", "Total Citas", "Completadas", "Canceladas"];
     const data = reporteCitas.ocupacionPorEmpleado.map(empleado => [
@@ -260,7 +268,6 @@ const ReportesPage: React.FC = () => {
   const generarPDFFinanciero = async (pdf: PDFGenerator) => {
     if (!reporteFinanciero) return;
     
-    // Resumen
     pdf.addSection("Resumen Financiero");
     pdf.addSummaryBoxes([
       { label: "Ingresos", value: formatCurrency(reporteFinanciero.resumen.totalIngresos), color: "#10b981" },
@@ -269,7 +276,6 @@ const ReportesPage: React.FC = () => {
       { label: "Margen", value: `${reporteFinanciero.resumen.margenUtilidad.toFixed(1)}%`, color: reporteFinanciero.resumen.margenUtilidad >= 0 ? "#10b981" : "#ef4444" }
     ]);
     
-    // Ingresos por método
     pdf.addSection("Ingresos por Método de Pago");
     const headersIngresos = ["Método", "Total"];
     const dataIngresos = Object.entries(reporteFinanciero.ingresosPorMetodo).map(
@@ -277,7 +283,6 @@ const ReportesPage: React.FC = () => {
     );
     pdf.addTable(headersIngresos, dataIngresos);
     
-    // ✅ NUEVO: Egresos por método de pago
     if (reporteFinanciero.egresosPorMetodo && Object.keys(reporteFinanciero.egresosPorMetodo).length > 0) {
       pdf.addSection("Egresos por Método de Pago");
       const headersEgresosMetodo = ["Método", "Total"];
@@ -287,7 +292,6 @@ const ReportesPage: React.FC = () => {
       pdf.addTable(headersEgresosMetodo, dataEgresosMetodo);
     }
     
-    // Egresos por categoría
     pdf.addSection("Egresos por Categoría");
     const headersEgresos = ["Categoría", "Total"];
     const dataEgresos = Object.entries(reporteFinanciero.egresosPorCategoria).map(
@@ -295,7 +299,6 @@ const ReportesPage: React.FC = () => {
     );
     pdf.addTable(headersEgresos, dataEgresos);
     
-    // ✅ NUEVO: Detalle de transacciones de ingresos
     if (reporteFinanciero.detalleIngresos && reporteFinanciero.detalleIngresos.length > 0) {
       pdf.addSection("Detalle de Ingresos");
       const headersIngTrans = ["Fecha", "Cliente", "Empleado", "Método", "Total"];
@@ -309,7 +312,6 @@ const ReportesPage: React.FC = () => {
       pdf.addTable(headersIngTrans, dataIngTrans);
     }
     
-    // ✅ NUEVO: Detalle de transacciones de egresos
     if (reporteFinanciero.detalleEgresos && reporteFinanciero.detalleEgresos.length > 0) {
       pdf.addSection("Detalle de Egresos");
       const headersEgrTrans = ["Fecha", "Concepto", "Categoría", "Método", "Total"];
@@ -327,7 +329,6 @@ const ReportesPage: React.FC = () => {
   const generarPDFClientes = async (pdf: PDFGenerator) => {
     if (!reporteClientes) return;
     
-    // Resumen
     pdf.addSection("Resumen de Clientes");
     pdf.addSummaryBoxes([
       { label: "Clientes Nuevos", value: reporteClientes.resumen.clientesNuevos.toString(), color: "#3b82f6" },
@@ -335,7 +336,6 @@ const ReportesPage: React.FC = () => {
       { label: "Ticket Promedio", value: formatCurrency(reporteClientes.resumen.ticketPromedio), color: "#8b5cf6" }
     ]);
     
-    // Top clientes
     pdf.addSection("Top 10 Clientes por Gasto");
     const headersTop = ["#", "Cliente", "Compras", "Total Gastado"];
     const dataTop = reporteClientes.topClientes.map((cliente, index) => [
@@ -346,7 +346,6 @@ const ReportesPage: React.FC = () => {
     ]);
     pdf.addTable(headersTop, dataTop);
     
-    // Clientes frecuentes
     pdf.addSection("Clientes Más Frecuentes");
     const headersFrec = ["#", "Cliente", "Visitas"];
     const dataFrec = reporteClientes.clientesFrecuentes.map((cliente, index) => [
@@ -377,10 +376,10 @@ const ReportesPage: React.FC = () => {
       color: "purple",
     },
     {
-      id: "ventas-servicio",
-      nombre: "Ventas por Servicio",
-      icon: ShoppingBag,
-      color: "orange",
+      id: "inventario",
+      nombre: "Inventario de Nevera",
+      icon: Package,
+      color: "cyan",
     },
     { id: "citas", nombre: "Reporte de Citas", icon: Calendar, color: "pink" },
     {
@@ -481,7 +480,6 @@ const ReportesPage: React.FC = () => {
           {/* DASHBOARD GENERAL */}
           {reporteActivo === "dashboard" && dashboard && (
             <div className="space-y-6">
-              {/* Tarjetas de métricas principales */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <Card className="p-6">
                   <div className="flex items-center justify-between mb-2">
@@ -549,7 +547,6 @@ const ReportesPage: React.FC = () => {
                 </Card>
               </div>
 
-              {/* Servicios más vendidos */}
               <Card>
                 <div className="p-6">
                   <h3 className="text-lg font-semibold text-gray-900 mb-4">
@@ -588,7 +585,6 @@ const ReportesPage: React.FC = () => {
           {/* REPORTE DE VENTAS */}
           {reporteActivo === "ventas" && reporteVentas && (
             <div className="space-y-6">
-              {/* Resumen */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <Card className="p-6">
                   <h3 className="text-sm text-gray-600 mb-2">Total Ingresos</h3>
@@ -616,7 +612,6 @@ const ReportesPage: React.FC = () => {
                 </Card>
               </div>
 
-              {/* Por método de pago */}
               <Card>
                 <div className="p-6">
                   <h3 className="text-lg font-semibold text-gray-900 mb-4">
@@ -647,7 +642,6 @@ const ReportesPage: React.FC = () => {
                 </div>
               </Card>
 
-              {/* Tabla de transacciones - FILTRAR SOLO PAGADAS */}
               <Card>
                 <div className="p-6">
                   <h3 className="text-lg font-semibold text-gray-900 mb-4">
@@ -767,73 +761,153 @@ const ReportesPage: React.FC = () => {
             </Card>
           )}
 
-          {/* VENTAS POR SERVICIO */}
-          {reporteActivo === "ventas-servicio" && reporteVentasPorServicio && (
-            <Card>
-              <div className="p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                  Análisis por Servicio (Solo Ventas Pagadas)
-                </h3>
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b">
-                        <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
-                          #
-                        </th>
-                        <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
-                          Servicio
-                        </th>
-                        <th className="text-right py-3 px-4 text-sm font-semibold text-gray-700">
-                          Cantidad
-                        </th>
-                        <th className="text-right py-3 px-4 text-sm font-semibold text-gray-700">
-                          Total
-                        </th>
-                        <th className="text-right py-3 px-4 text-sm font-semibold text-gray-700">
-                          Promedio
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {reporteVentasPorServicio.servicios.map(
-                        (servicio, index) => (
-                          <tr
-                            key={servicio.servicioId}
-                            className="border-b hover:bg-gray-50"
-                          >
-                            <td className="py-3 px-4 text-sm text-gray-600">
-                              {index + 1}
-                            </td>
-                            <td className="py-3 px-4 text-sm font-medium text-gray-900">
-                              {servicio.nombre}
+          {/* INVENTARIO DE NEVERA */}
+          {reporteActivo === "inventario" && reporteInventario && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <Card className="p-6">
+                  <h3 className="text-sm text-gray-600 mb-2">Total Productos</h3>
+                  <p className="text-2xl font-bold text-blue-600">
+                    {reporteInventario.resumen.totalProductos}
+                  </p>
+                </Card>
+                <Card className="p-6">
+                  <h3 className="text-sm text-gray-600 mb-2">Stock Bajo</h3>
+                  <p className="text-2xl font-bold text-red-600">
+                    {reporteInventario.resumen.productosStockBajo}
+                  </p>
+                </Card>
+                <Card className="p-6">
+                  <h3 className="text-sm text-gray-600 mb-2">Valor Stock</h3>
+                  <p className="text-2xl font-bold text-purple-600">
+                    {formatCurrency(reporteInventario.resumen.valorTotalStock)}
+                  </p>
+                </Card>
+                <Card className="p-6">
+                  <h3 className="text-sm text-gray-600 mb-2">Ganancia</h3>
+                  <p className="text-2xl font-bold text-green-600">
+                    {formatCurrency(reporteInventario.resumen.gananciaTotal)}
+                  </p>
+                </Card>
+              </div>
+
+              <Card>
+                <div className="p-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                    Productos Más Vendidos
+                  </h3>
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="border-b">
+                          <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">#</th>
+                          <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Producto</th>
+                          <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Categoría</th>
+                          <th className="text-right py-3 px-4 text-sm font-semibold text-gray-700">Cantidad</th>
+                          <th className="text-right py-3 px-4 text-sm font-semibold text-gray-700">Total Ventas</th>
+                          <th className="text-right py-3 px-4 text-sm font-semibold text-gray-700">Ganancia</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {reporteInventario.productosMasVendidos.map((prod, index) => (
+                          <tr key={prod.productoId} className="border-b hover:bg-gray-50">
+                            <td className="py-3 px-4 text-sm text-gray-600">{index + 1}</td>
+                            <td className="py-3 px-4 text-sm font-medium text-gray-900">{prod.nombre}</td>
+                            <td className="py-3 px-4">
+                              <Badge variant="default">{prod.categoria}</Badge>
                             </td>
                             <td className="py-3 px-4 text-sm text-right text-gray-900">
-                              {servicio.cantidadVendida}
+                              {prod.cantidadVendida}
                             </td>
-                            <td className="py-3 px-4 text-sm font-semibold text-right text-gray-900">
-                              {formatCurrency(servicio.totalGenerado)}
+                            <td className="py-3 px-4 text-sm font-semibold text-right text-green-600">
+                              {formatCurrency(prod.totalVentas)}
                             </td>
-                            <td className="py-3 px-4 text-sm text-right text-gray-600">
-                              {formatCurrency(
-                                servicio.totalGenerado /
-                                  servicio.cantidadVendida
-                              )}
+                            <td className="py-3 px-4 text-sm font-semibold text-right text-blue-600">
+                              {formatCurrency(prod.ganancia)}
                             </td>
                           </tr>
-                        )
-                      )}
-                    </tbody>
-                  </table>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
-              </div>
-            </Card>
+              </Card>
+
+              {reporteInventario.ventasPorCategoria.length > 0 && (
+                <Card>
+                  <div className="p-6">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                      Ventas por Categoría
+                    </h3>
+                    <div className="space-y-3">
+                      {reporteInventario.ventasPorCategoria.map((cat) => (
+                        <div
+                          key={cat.categoria}
+                          className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                        >
+                          <div>
+                            <p className="font-medium text-gray-900">{cat.categoria}</p>
+                            <p className="text-sm text-gray-500">{cat.cantidad} unidades</p>
+                          </div>
+                          <span className="font-semibold text-gray-900">
+                            {formatCurrency(cat.total)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </Card>
+              )}
+
+              <Card>
+                <div className="p-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                    Últimos Movimientos
+                  </h3>
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="border-b">
+                          <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Fecha</th>
+                          <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Tipo</th>
+                          <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Producto</th>
+                          <th className="text-center py-3 px-4 text-sm font-semibold text-gray-700">Cantidad</th>
+                          <th className="text-right py-3 px-4 text-sm font-semibold text-gray-700">Total</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {reporteInventario.movimientos.slice(0, 20).map((mov, index) => (
+                          <tr key={index} className="border-b hover:bg-gray-50">
+                            <td className="py-3 px-4 text-sm text-gray-900">
+                              {format(new Date(mov.fecha), "dd/MM/yyyy HH:mm", { locale: es })}
+                            </td>
+                            <td className="py-3 px-4">
+                              <Badge variant={mov.tipo === 'COMPRA' ? 'info' : 'success'}>
+                                {mov.tipo}
+                              </Badge>
+                            </td>
+                            <td className="py-3 px-4 text-sm text-gray-900">{mov.producto}</td>
+                            <td className="py-3 px-4 text-center">
+                              <span className={`font-semibold ${mov.tipo === 'COMPRA' ? 'text-blue-600' : 'text-red-600'}`}>
+                                {mov.tipo === 'COMPRA' ? '+' : '-'}{mov.cantidad}
+                              </span>
+                            </td>
+                            <td className={`py-3 px-4 text-right font-semibold ${mov.tipo === 'COMPRA' ? 'text-blue-600' : 'text-green-600'}`}>
+                              {formatCurrency(mov.total)}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </Card>
+            </div>
           )}
 
           {/* REPORTE DE CITAS */}
           {reporteActivo === "citas" && reporteCitas && (
             <div className="space-y-6">
-              {/* Resumen */}
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <Card className="p-6">
                   <h3 className="text-sm text-gray-600 mb-2">Total Citas</h3>
@@ -868,7 +942,6 @@ const ReportesPage: React.FC = () => {
                 </Card>
               </div>
 
-              {/* Ocupación por empleado */}
               <Card>
                 <div className="p-6">
                   <h3 className="text-lg font-semibold text-gray-900 mb-4">
@@ -907,7 +980,6 @@ const ReportesPage: React.FC = () => {
           {/* REPORTE FINANCIERO */}
           {reporteActivo === "financiero" && reporteFinanciero && (
             <div className="space-y-6">
-              {/* Resumen */}
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <Card className="p-6">
                   <h3 className="text-sm text-gray-600 mb-2">Ingresos</h3>
@@ -948,7 +1020,6 @@ const ReportesPage: React.FC = () => {
                 </Card>
               </div>
 
-              {/* Ingresos y Egresos por método */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Card>
                   <div className="p-6">
@@ -975,7 +1046,6 @@ const ReportesPage: React.FC = () => {
                   </div>
                 </Card>
 
-                {/* ✅ NUEVO: Egresos por método de pago */}
                 <Card>
                   <div className="p-6">
                     <h3 className="text-lg font-semibold text-gray-900 mb-4">
@@ -1008,7 +1078,6 @@ const ReportesPage: React.FC = () => {
                 </Card>
               </div>
 
-              {/* Egresos por categoría */}
               <Card>
                 <div className="p-6">
                   <h3 className="text-lg font-semibold text-gray-900 mb-4">
@@ -1034,7 +1103,64 @@ const ReportesPage: React.FC = () => {
                 </div>
               </Card>
 
-              {/* ✅ NUEVO: Detalle de Ingresos */}
+              {/* TRANSACCIONES DE INVENTARIO */}
+              {reporteFinanciero.inventario && (
+                <>
+                  <Card>
+                    <div className="p-6">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                        Transacciones de Inventario (Nevera)
+                      </h3>
+                      <div className="grid grid-cols-3 gap-4">
+                        <div className="bg-blue-50 p-4 rounded-lg">
+                          <p className="text-sm text-gray-600 mb-1">Compras de Productos</p>
+                          <p className="text-2xl font-bold text-blue-600">
+                            {formatCurrency(reporteFinanciero.inventario.totalCompras)}
+                          </p>
+                        </div>
+                        <div className="bg-green-50 p-4 rounded-lg">
+                          <p className="text-sm text-gray-600 mb-1">Ventas de Productos</p>
+                          <p className="text-2xl font-bold text-green-600">
+                            {formatCurrency(reporteFinanciero.inventario.totalVentas)}
+                          </p>
+                        </div>
+                        <div className="bg-purple-50 p-4 rounded-lg">
+                          <p className="text-sm text-gray-600 mb-1">Ganancia Neta</p>
+                          <p className="text-2xl font-bold text-purple-600">
+                            {formatCurrency(reporteFinanciero.inventario.ganancia)}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
+
+                  {Object.keys(reporteFinanciero.inventario.ventasPorMetodo).length > 0 && (
+                    <Card>
+                      <div className="p-6">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                          Ventas de Nevera por Método de Pago
+                        </h3>
+                        <div className="space-y-3">
+                          {Object.entries(reporteFinanciero.inventario.ventasPorMetodo).map(
+                            ([metodo, total]) => (
+                              <div
+                                key={metodo}
+                                className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                              >
+                                <span className="font-medium text-gray-900">{metodo}</span>
+                                <span className="font-semibold text-green-600">
+                                  {formatCurrency(total)}
+                                </span>
+                              </div>
+                            )
+                          )}
+                        </div>
+                      </div>
+                    </Card>
+                  )}
+                </>
+              )}
+
               {reporteFinanciero.detalleIngresos && reporteFinanciero.detalleIngresos.length > 0 && (
                 <Card>
                   <div className="p-6">
@@ -1099,7 +1225,6 @@ const ReportesPage: React.FC = () => {
                 </Card>
               )}
 
-              {/* ✅ NUEVO: Detalle de Egresos */}
               {reporteFinanciero.detalleEgresos && reporteFinanciero.detalleEgresos.length > 0 && (
                 <Card>
                   <div className="p-6">
@@ -1169,7 +1294,6 @@ const ReportesPage: React.FC = () => {
           {/* REPORTE DE CLIENTES */}
           {reporteActivo === "clientes" && reporteClientes && (
             <div className="space-y-6">
-              {/* Resumen */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <Card className="p-6">
                   <h3 className="text-sm text-gray-600 mb-2">
@@ -1197,7 +1321,6 @@ const ReportesPage: React.FC = () => {
                 </Card>
               </div>
 
-              {/* Top clientes y frecuentes */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Card>
                   <div className="p-6">

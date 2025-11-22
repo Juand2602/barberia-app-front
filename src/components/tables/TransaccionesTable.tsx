@@ -1,4 +1,4 @@
-// src/components/tables/TransaccionesTable.tsx - ACTUALIZADO
+// src/components/tables/TransaccionesTable.tsx - CON PAGO MIXTO
 
 import React from 'react';
 import { format } from 'date-fns';
@@ -49,6 +49,7 @@ export const TransaccionesTable: React.FC<TransaccionesTableProps> = ({
     return <Badge variant="success">Pagado</Badge>;
   };
 
+  // ✅ ACTUALIZADO: Agregar soporte para MIXTO
   const getMetodoBadge = (metodoPago: string) => {
     if (metodoPago === 'PENDIENTE') {
       return <Badge variant="default" className="text-xs">Por definir</Badge>;
@@ -56,7 +57,14 @@ export const TransaccionesTable: React.FC<TransaccionesTableProps> = ({
     if (metodoPago === 'EFECTIVO') {
       return <Badge variant="success" className="text-xs">Efectivo</Badge>;
     }
-    return <Badge variant="info" className="text-xs">Transferencia</Badge>;
+    if (metodoPago === 'TRANSFERENCIA') {
+      return <Badge variant="info" className="text-xs">Transferencia</Badge>;
+    }
+    // ✅ NUEVO: Badge para pago mixto
+    if (metodoPago === 'MIXTO') {
+      return <Badge variant="warning">Mixto</Badge>;
+    }
+    return <Badge variant="default" className="text-xs">{metodoPago}</Badge>;
   };
 
   return (
@@ -155,7 +163,20 @@ export const TransaccionesTable: React.FC<TransaccionesTableProps> = ({
                 {getEstadoBadge(transaccion)}
               </td>
               <td className="px-6 py-4 whitespace-nowrap">
-                {getMetodoBadge(transaccion.metodoPago)}
+                {/* ✅ MEJORADO: Mostrar desglose para pago mixto */}
+                {transaccion.metodoPago === 'MIXTO' && transaccion.montoEfectivo !== null && transaccion.montoTransferencia !== null ? (
+                  <div className="space-y-1">
+                    {getMetodoBadge(transaccion.metodoPago)}
+                    <div className="text-xs text-gray-600">
+                      💵 {formatCurrency(transaccion.montoEfectivo)}
+                    </div>
+                    <div className="text-xs text-gray-600">
+                      💳 {formatCurrency(transaccion.montoTransferencia)}
+                    </div>
+                  </div>
+                ) : (
+                  getMetodoBadge(transaccion.metodoPago)
+                )}
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-right">
                 <span

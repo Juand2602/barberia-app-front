@@ -3,8 +3,12 @@ import { autoUpdater } from 'electron-updater';
 import path from 'path';
 import os from 'os';
 import crypto from 'crypto';
+import express from 'express'; // ✅ NUEVO
+import { createServer } from 'http'; // ✅ NUEVO
 
 let mainWindow: BrowserWindow | null = null;
+let localServer: any = null; // ✅ NUEVO
+const PRODUCTION_PORT = 3456; // ✅ Puerto para producción
 
 const isDev = process.env.NODE_ENV === 'development';
 
@@ -51,6 +55,47 @@ function getSystemInfo() {
     cpuModel: os.cpus()[0]?.model || 'Unknown',
     platform: os.platform()
   };
+}
+
+// ============================
+// ✅ NUEVO: SERVIDOR LOCAL PARA PRODUCCIÓN
+// ============================
+function startLocalServer(): Promise<number> {
+  return new Promise((resolve, reject) => {
+    const expressApp = express();
+    const distPath = path.join(__dirname, '../dist');
+    
+    console.log('📂 Sirviendo archivos desde:', distPath);
+    
+    // Servir archivos estáticos
+    expressApp.use(express.static(distPath));
+    
+    // Todas las rutas deben servir index.html (para React Router)
+    expressApp.get('*', (req, res) => {
+      res.sendFile(path.join(distPath, 'index.html'));
+    });
+    
+    localServer = createServer(expressApp);
+    
+    localServer.listen(PRODUCTION_PORT, 'localhost', () => {
+      console.log(`✅ Servidor local corriendo en http://localhost:${PRODUCTION_PORT}`);
+      resolve(PRODUCTION_PORT);
+    });
+    
+    localServer.on('error', (error: any) => {
+      if (error.code === 'EADDRINUSE') {
+        console.warn(`⚠️ Puerto ${PRODUCTION_PORT} en uso, intentando siguiente...`);
+        // Si el puerto está en uso, intentar con el siguiente
+        const nextPort = PRODUCTION_PORT + 1;
+        localServer.listen(nextPort, 'localhost', () => {
+          console.log(`✅ Servidor local corriendo en http://localhost:${nextPort}`);
+          resolve(nextPort);
+        });
+      } else {
+        reject(error);
+      }
+    });
+  });
 }
 
 // ============================
@@ -140,7 +185,7 @@ autoUpdater.on('error', (error) => {
 // ============================
 // CREAR VENTANA
 // ============================
-function createWindow() {
+async function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1400,
     height: 900,
@@ -152,7 +197,7 @@ function createWindow() {
       preload: path.join(__dirname, 'preload.js'),
     },
     title: 'Barbería App',
-    show: false, // No mostrar hasta que esté lista
+    show: false,
   });
 
   // ============================
@@ -164,24 +209,29 @@ function createWindow() {
     mainWindow.loadURL('http://localhost:5173');
     mainWindow.webContents.openDevTools();
   } else {
-    // Producción: Archivos compilados
-    const indexPath = path.join(__dirname, '../dist/index.html');
+    // ✅ PRODUCCIÓN: Iniciar servidor local y cargar desde localhost
+    console.log('📦 Modo producción - Iniciando servidor local...');
     
-    console.log('📦 Modo producción');
-    console.log('📂 __dirname:', __dirname);
-    console.log('📂 Cargando desde:', indexPath);
-    
-    mainWindow.loadFile(indexPath).catch(err => {
-      console.error('❌ Error cargando index.html:', err);
-    });
+    try {
+      const port = await startLocalServer();
+      const url = `http://localhost:${port}`;
+      console.log('🌐 Cargando app desde:', url);
+      
+      await mainWindow.loadURL(url);
+      console.log('✅ App cargada exitosamente');
+    } catch (error) {
+      console.error('❌ Error iniciando servidor local:', error);
+      // Fallback: intentar cargar con file://
+      const indexPath = path.join(__dirname, '../dist/index.html');
+      console.log('⚠️ Fallback: Cargando desde file://', indexPath);
+      await mainWindow.loadFile(indexPath);
+    }
   }
 
-  // Mostrar ventana cuando esté lista
   mainWindow.once('ready-to-show', () => {
     console.log('✅ Ventana lista para mostrar');
     mainWindow?.show();
     
-    // Verificar actualizaciones después de 3 segundos
     if (!isDev) {
       console.log('🚀 Programando verificación de actualizaciones...');
       setTimeout(() => {
@@ -190,14 +240,12 @@ function createWindow() {
     }
   });
 
-  // Debug: Capturar errores de carga
   mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription, validatedURL) => {
     console.error('❌ Fallo al cargar:');
     console.error('   URL:', validatedURL);
     console.error('   Error:', errorCode, '-', errorDescription);
   });
 
-  // Debug: Ver mensajes de consola del frontend
   mainWindow.webContents.on('console-message', (event, level, message, line, sourceId) => {
     const levels = ['verbose', 'info', 'warning', 'error'];
     console.log(`[Frontend ${levels[level]}]:`, message);
@@ -205,6 +253,13 @@ function createWindow() {
 
   mainWindow.on('closed', () => {
     mainWindow = null;
+    
+    // ✅ Cerrar servidor local cuando se cierra la ventana
+    if (localServer) {
+      localServer.close(() => {
+        console.log('🔴 Servidor local cerrado');
+      });
+    }
   });
 }
 
@@ -214,6 +269,11 @@ function createWindow() {
 app.whenReady().then(createWindow);
 
 app.on('window-all-closed', () => {
+  // ✅ Cerrar servidor local cuando se cierra la app
+  if (localServer) {
+    localServer.close();
+  }
+  
   if (process.platform !== 'darwin') {
     app.quit();
   }
@@ -222,5 +282,12 @@ app.on('window-all-closed', () => {
 app.on('activate', () => {
   if (BrowserWindow.getAllWindows().length === 0) {
     createWindow();
+  }
+});
+
+// ✅ Cerrar servidor local cuando la app termina
+app.on('before-quit', () => {
+  if (localServer) {
+    localServer.close();
   }
 });

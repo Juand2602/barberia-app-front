@@ -1,4 +1,4 @@
-// src/types/reporte.types.ts
+// src/types/reporte.types.ts - ACTUALIZADO CON INVENTARIO
 
 import { EstadoPago } from './transaccion.types';
 
@@ -107,7 +107,6 @@ export interface ReporteCitas {
   }>;
 }
 
-// ✅ ACTUALIZADO: ReporteFinanciero con nuevos campos
 export interface ReporteFinanciero {
   periodo: PeriodoReporte;
   resumen: {
@@ -117,7 +116,7 @@ export interface ReporteFinanciero {
     margenUtilidad: number;
   };
   ingresosPorMetodo: Record<string, number>;
-  egresosPorMetodo: Record<string, number>; // ✅ NUEVO
+  egresosPorMetodo: Record<string, number>;
   egresosPorCategoria: Record<string, number>;
   flujoDiario: Array<{
     fecha: string;
@@ -125,7 +124,6 @@ export interface ReporteFinanciero {
     egresos: number;
     neto: number;
   }>;
-  // ✅ NUEVO: Detalle de transacciones
   detalleIngresos: Array<{
     id: string;
     fecha: Date;
@@ -142,6 +140,13 @@ export interface ReporteFinanciero {
     metodoPago: string;
     total: number;
   }>;
+  // ✅ NUEVO: Datos de inventario
+  inventario?: {
+    totalCompras: number;
+    totalVentas: number;
+    ganancia: number;
+    ventasPorMetodo: Record<string, number>;
+  };
 }
 
 export interface ReporteClientes {
@@ -167,5 +172,40 @@ export interface ReporteClientes {
     nombre: string;
     telefono: string;
     fechaRegistro: Date;
+  }>;
+}
+
+// ✅ NUEVO: Reporte de Inventario
+export interface ReporteInventario {
+  resumen: {
+    totalProductos: number;
+    productosStockBajo: number;
+    valorTotalStock: number;
+    totalCompras: number;
+    totalVentas: number;
+    gananciaTotal: number;
+  };
+  productosMasVendidos: Array<{
+    productoId: string;
+    nombre: string;
+    categoria: string;
+    cantidadVendida: number;
+    totalVentas: number;
+    ganancia: number;
+  }>;
+  ventasPorCategoria: Array<{
+    categoria: string;
+    cantidad: number;
+    total: number;
+  }>;
+  movimientos: Array<{
+    tipo: 'COMPRA' | 'VENTA';
+    fecha: string;
+    producto: string;
+    cantidad: number;
+    precioUnitario: number;
+    total: number;
+    metodoPago?: string;
+    proveedor?: string;
   }>;
 }

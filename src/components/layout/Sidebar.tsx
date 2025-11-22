@@ -1,3 +1,5 @@
+// src/components/layout/Sidebar.tsx - ACTUALIZADO CON INVENTARIO
+
 import React from "react";
 import { NavLink } from "react-router-dom";
 import {
@@ -9,6 +11,7 @@ import {
   BarChart3,
   UserCircle2,
   Calculator,
+  Package, // ✅ NUEVO: Icono de inventario
 } from "lucide-react";
 import { clsx } from "clsx";
 
@@ -27,6 +30,7 @@ const navigation: NavItem[] = [
   { name: "Servicios", path: "/servicios", icon: <Scissors size={20} /> },
   { name: "Empleados", path: "/empleados", icon: <UserCircle2 size={20} /> },
   { name: "Transacciones", path: "/transacciones", icon: <DollarSign size={20} /> },
+  { name: "Inventario", path: "/inventario", icon: <Package size={20} /> }, // ✅ NUEVO
   { name: "Caja", path: "/cierre-caja", icon: <Calculator size={20} /> },
   { name: "Reportes", path: "/reportes", icon: <FileText size={20} /> },
 ];
@@ -35,24 +39,21 @@ export const Sidebar: React.FC = () => {
   return (
     <div className="w-64 bg-gray-900 min-h-screen flex flex-col">
       {/* Header con logo centrado */}
-     <div className="flex flex-col items-center justify-center px-6 py-6 border-b border-gray-800">
-  <div style={{ width: 150, height: 100 }} className="flex items-center justify-center overflow-hidden mb-0">
-    <img
-      // 2. USA LA VARIABLE IMPORTADA EN EL ATRIBUTO SRC
-      src={logo}
-      alt="M Barberia"
-      style={{ width: 350, height: 350, objectFit: 'contain', display: 'block' }}
-    />
-  </div>
+      <div className="flex flex-col items-center justify-center px-6 py-6 border-b border-gray-800">
+        <div style={{ width: 150, height: 100 }} className="flex items-center justify-center overflow-hidden mb-0">
+          <img
+            src={logo}
+            alt="M Barberia"
+            style={{ width: 350, height: 350, objectFit: 'contain', display: 'block' }}
+          />
+        </div>
 
-  <h1 className="text-white font-bold text-lg leading-tight text-center">
-    Madison MVP Barbería App
-  </h1>
+        <h1 className="text-white font-bold text-lg leading-tight text-center">
+          Madison MVP Barbería App
+        </h1>
 
-  <p className="text-gray-400 text-xs mt-4">Sistema de Gestión</p>
-
-</div>
-
+        <p className="text-gray-400 text-xs mt-4">Sistema de Gestión</p>
+      </div>
 
       {/* Navegación */}
       <nav className="flex-1 px-4 py-6 space-y-1">

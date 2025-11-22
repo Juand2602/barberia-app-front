@@ -28,6 +28,7 @@
     "date-fns": "^3.3.1",
     "electron-updater": "^6.1.8",
     "exceljs": "^4.4.0",
+    "express": "^5.1.0",
     "jspdf": "^3.0.3",
     "jspdf-autotable": "^5.0.2",
     "lucide-react": "^0.344.0",
@@ -44,6 +45,7 @@
     "zustand": "^4.5.2"
   },
   "devDependencies": {
+    "@types/express": "^5.0.5",
     "@types/node": "^20.11.24",
     "@types/react": "^18.2.61",
     "@types/react-big-calendar": "^1.16.3",
@@ -77,10 +79,12 @@
     "files": [
       "dist/**/*",
       "dist-electron/**/*",
+      "node_modules/**/*",
       "package.json"
     ],
     "asarUnpack": [
-      "dist/**"
+      "dist/**",
+      "node_modules/**"
     ],
     "win": {
       "target": [

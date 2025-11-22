@@ -1,3 +1,5 @@
+// src/types/cliente.types.ts - ACTUALIZADO
+
 export interface Cliente {
   id: string;
   nombre: string;
@@ -6,6 +8,10 @@ export interface Cliente {
   fechaRegistro: string;
   notas: string | null;
   activo: boolean;
+  // 🌟 NUEVO: Campos de sellos
+  sellos: number;
+  sellosCanjeados: number;
+  ultimoSello: string | null;
   createdAt: string;
   updatedAt: string;
   _count?: {
@@ -62,4 +68,36 @@ export interface UpdateClienteDTO {
   email?: string;
   notas?: string;
   activo?: boolean;
+}
+
+// 🌟 NUEVO: Tipos para sistema de sellos
+export interface HistorialSello {
+  id: string;
+  clienteId: string;
+  tipo: 'AGREGADO' | 'CANJEADO';
+  cantidad: number;
+  motivo?: string;
+  sellosTotales: number;
+  createdAt: string;
+}
+
+export interface Premio {
+  id: string;
+  nombre: string;
+  sellosRequeridos: number;
+  descripcion?: string;
+  activo: boolean;
+  orden: number;
+}
+
+export interface EstadisticasSellos {
+  sellosActuales: number;
+  sellosCanjeados: number;
+  totalAcumulados: number;
+  ultimoSello: string | null;
+  proximoPremio: {
+    nombre: string;
+    sellosRequeridos: number;
+    sellosRestantes: number;
+  } | null;
 }

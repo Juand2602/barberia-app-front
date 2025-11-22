@@ -1,6 +1,8 @@
+// src/components/forms/IngresoForm.tsx - ACTUALIZADO CON PAGO MIXTO
+
 import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, DollarSign } from 'lucide-react';
 import { Input } from '@components/ui/Input';
 import { Button } from '@components/ui/Button';
 import { clientesService } from '@services/clientes.service';
@@ -22,7 +24,7 @@ interface ItemFormulario extends TransaccionItemDTO {
   nombreServicio?: string;
 }
 
-type MetodoPago = 'EFECTIVO' | 'TRANSFERENCIA';
+type MetodoPago = 'EFECTIVO' | 'TRANSFERENCIA' | 'MIXTO'; // ✅ AGREGAR MIXTO
 
 type FormValues = {
   clienteId?: string;
@@ -30,6 +32,8 @@ type FormValues = {
   metodoPago: MetodoPago;
   referencia?: string;
   notas?: string;
+  montoEfectivo?: number;      // ✅ NUEVO
+  montoTransferencia?: number; // ✅ NUEVO
 };
 
 export const IngresoForm: React.FC<IngresoFormProps> = ({
@@ -50,11 +54,14 @@ export const IngresoForm: React.FC<IngresoFormProps> = ({
       metodoPago: 'EFECTIVO',
       referencia: '',
       notas: '',
+      montoEfectivo: undefined,
+      montoTransferencia: undefined,
     },
   });
 
-  // Aseguramos el tipo correcto para metodoPago
   const metodoPago = (watch('metodoPago') ?? 'EFECTIVO') as MetodoPago;
+  const montoEfectivo = watch('montoEfectivo') || 0;
+  const montoTransferencia = watch('montoTransferencia') || 0;
 
   useEffect(() => {
     loadData();
@@ -102,7 +109,6 @@ export const IngresoForm: React.FC<IngresoFormProps> = ({
 
         const itemActualizado: ItemFormulario = { ...item, [campo]: valor };
 
-        // Si se cambió el servicio, actualizar precio y nombre
         if (campo === 'servicioId') {
           const servicio = servicios.find(s => s.id === valor);
           if (servicio) {
@@ -110,14 +116,12 @@ export const IngresoForm: React.FC<IngresoFormProps> = ({
             itemActualizado.nombreServicio = servicio.nombre;
             itemActualizado.subtotal = servicio.precio * (itemActualizado.cantidad || 1);
           } else {
-            // servicio no encontrado: resetear precio/subtotal
             itemActualizado.precioUnitario = 0;
             itemActualizado.subtotal = 0;
             itemActualizado.nombreServicio = undefined;
           }
         }
 
-        // Si se cambió la cantidad o precio, recalcular subtotal
         if (campo === 'cantidad') {
           const cantidad = Number(valor) || 0;
           itemActualizado.cantidad = cantidad;
@@ -148,6 +152,23 @@ export const IngresoForm: React.FC<IngresoFormProps> = ({
       return;
     }
 
+    // ✅ VALIDACIÓN PARA PAGO MIXTO
+    if (data.metodoPago === 'MIXTO') {
+      const total = calcularTotal();
+      const efectivo = data.montoEfectivo || 0;
+      const transferencia = data.montoTransferencia || 0;
+      
+      if (efectivo <= 0 || transferencia <= 0) {
+        alert('Para pago mixto, debe especificar montos mayores a cero en efectivo y transferencia');
+        return;
+      }
+      
+      if (Math.abs((efectivo + transferencia) - total) > 0.01) {
+        alert(`La suma de efectivo ($${efectivo.toLocaleString()}) y transferencia ($${transferencia.toLocaleString()}) debe ser igual al total ($${total.toLocaleString()})`);
+        return;
+      }
+    }
+
     const transaccion: CreateTransaccionDTO = {
       tipo: 'INGRESO',
       clienteId: data.clienteId || undefined,
@@ -156,6 +177,9 @@ export const IngresoForm: React.FC<IngresoFormProps> = ({
       metodoPago: data.metodoPago,
       referencia: data.referencia || undefined,
       notas: data.notas || undefined,
+      // ✅ NUEVO: Incluir montos solo si es pago mixto
+      montoEfectivo: data.metodoPago === 'MIXTO' ? data.montoEfectivo : undefined,
+      montoTransferencia: data.metodoPago === 'MIXTO' ? data.montoTransferencia : undefined,
       items: items.map(({ servicioId, cantidad, precioUnitario, subtotal }) => ({
         servicioId,
         cantidad,
@@ -350,16 +374,13 @@ export const IngresoForm: React.FC<IngresoFormProps> = ({
         <label className="block text-sm font-medium text-gray-700 mb-2">
           Método de Pago *
         </label>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-3 gap-3">
           <label
-            className={`
-              flex items-center justify-center gap-2 p-4 border-2 rounded-lg cursor-pointer transition-colors
-              ${
-                metodoPago === "EFECTIVO"
-                  ? "bg-green-50 border-green-500 text-green-900"
-                  : "bg-white border-gray-300 hover:border-gray-400"
-              }
-            `}
+            className={`flex items-center justify-center gap-2 p-4 border-2 rounded-lg cursor-pointer transition-colors ${
+              metodoPago === "EFECTIVO"
+                ? "bg-green-50 border-green-500 text-green-900"
+                : "bg-white border-gray-300 hover:border-gray-400"
+            }`}
           >
             <input
               type="radio"
@@ -371,14 +392,11 @@ export const IngresoForm: React.FC<IngresoFormProps> = ({
           </label>
 
           <label
-            className={`
-              flex items-center justify-center gap-2 p-4 border-2 rounded-lg cursor-pointer transition-colors
-              ${
-                metodoPago === "TRANSFERENCIA"
-                  ? "bg-purple-50 border-purple-500 text-purple-900"
-                  : "bg-white border-gray-300 hover:border-gray-400"
-              }
-            `}
+            className={`flex items-center justify-center gap-2 p-4 border-2 rounded-lg cursor-pointer transition-colors ${
+              metodoPago === "TRANSFERENCIA"
+                ? "bg-purple-50 border-purple-500 text-purple-900"
+                : "bg-white border-gray-300 hover:border-gray-400"
+            }`}
           >
             <input
               type="radio"
@@ -388,11 +406,96 @@ export const IngresoForm: React.FC<IngresoFormProps> = ({
             />
             <span className="font-medium">Transferencia</span>
           </label>
+
+          {/* ✅ NUEVO: Opción pago mixto */}
+          <label
+            className={`flex items-center justify-center gap-2 p-4 border-2 rounded-lg cursor-pointer transition-colors ${
+              metodoPago === "MIXTO"
+                ? "bg-blue-50 border-blue-500 text-blue-900"
+                : "bg-white border-gray-300 hover:border-gray-400"
+            }`}
+          >
+            <input
+              type="radio"
+              value="MIXTO"
+              {...register("metodoPago")}
+              className="w-4 h-4"
+            />
+            <DollarSign size={20} />
+            <span className="font-medium">Mixto</span>
+          </label>
         </div>
       </div>
 
-      {/* Referencia (solo si es transferencia) */}
-      {metodoPago === "TRANSFERENCIA" && (
+      {/* ✅ NUEVO: Campos para pago mixto */}
+      {metodoPago === 'MIXTO' && (
+        <div className="bg-amber-50 p-4 rounded-lg space-y-4 border-2 border-amber-200">
+          <h4 className="font-semibold text-gray-900 flex items-center gap-2">
+            <DollarSign size={18} />
+            Desglose de Pago Mixto
+          </h4>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Monto en Efectivo *
+              </label>
+              <input
+                type="number"
+                step="1000"
+                {...register("montoEfectivo", {
+                  required: metodoPago === 'MIXTO',
+                  valueAsNumber: true,
+                })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="0"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Monto en Transferencia *
+              </label>
+              <input
+                type="number"
+                step="1000"
+                {...register("montoTransferencia", {
+                  required: metodoPago === 'MIXTO',
+                  valueAsNumber: true,
+                })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="0"
+              />
+            </div>
+          </div>
+
+          {/* Verificación visual */}
+          <div className="bg-white p-3 rounded-lg border border-amber-300">
+            <div className="flex justify-between items-center text-sm">
+              <span className="text-gray-600">Total a pagar:</span>
+              <span className="font-bold">${calcularTotal().toLocaleString()}</span>
+            </div>
+            <div className="flex justify-between items-center text-sm mt-1">
+              <span className="text-gray-600">Efectivo + Transferencia:</span>
+              <span className={`font-bold ${
+                Math.abs((montoEfectivo + montoTransferencia) - calcularTotal()) < 0.01
+                  ? 'text-green-600'
+                  : 'text-red-600'
+              }`}>
+                ${(montoEfectivo + montoTransferencia).toLocaleString()}
+              </span>
+            </div>
+            {Math.abs((montoEfectivo + montoTransferencia) - calcularTotal()) >= 0.01 && (
+              <p className="text-xs text-red-600 mt-2">
+                ⚠️ La suma debe ser igual al total
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Referencia */}
+      {(metodoPago === "TRANSFERENCIA" || metodoPago === "MIXTO") && (
         <Input
           label="Número de Referencia (opcional)"
           {...register("referencia")}

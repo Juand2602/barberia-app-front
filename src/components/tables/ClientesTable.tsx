@@ -1,7 +1,9 @@
+// src/components/tables/ClientesTable.tsx - ACTUALIZADO
+
 import React from 'react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Eye, Edit, UserX, Phone, Mail } from 'lucide-react';
+import { Eye, Edit, UserX, Phone, Mail, Award } from 'lucide-react';
 import { Cliente } from '@/types/cliente.types';
 
 import { Button } from '@components/ui/Button';
@@ -42,6 +44,9 @@ export const ClientesTable: React.FC<ClientesTableProps> = ({
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
               Contacto
             </th>
+            <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+              🎁 Sellos
+            </th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
               Registro
             </th>
@@ -75,6 +80,27 @@ export const ClientesTable: React.FC<ClientesTableProps> = ({
                     </div>
                   )}
                 </div>
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap text-center">
+                <div className="flex items-center justify-center gap-2">
+                  <Award 
+                    size={18} 
+                    className={cliente.sellos > 0 ? 'text-blue-500' : 'text-gray-300'} 
+                  />
+                  <span className={`font-bold text-lg ${
+                    cliente.sellos >= 5 ? 'text-green-600' :
+                    cliente.sellos >= 3 ? 'text-blue-600' :
+                    cliente.sellos > 0 ? 'text-gray-700' :
+                    'text-gray-400'
+                  }`}>
+                    {cliente.sellos}
+                  </span>
+                </div>
+                {cliente.sellos >= 5 && (
+                  <Badge variant="success" className="text-xs mt-1">
+                    ¡Premio disponible!
+                  </Badge>
+                )}
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                 {format(new Date(cliente.fechaRegistro), 'dd/MM/yyyy', { locale: es })}
