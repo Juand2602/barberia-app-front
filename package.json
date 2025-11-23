@@ -83,6 +83,9 @@
     "asarUnpack": [
       "dist/**"
     ],
+    "extraMetadata": {
+      "main": "dist-electron/main.js"
+    },
     "win": {
       "target": [
         {
