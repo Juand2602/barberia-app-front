@@ -1,28 +1,28 @@
-import { app, BrowserWindow, ipcMain } from 'electron';
+import { app, ipcMain, shell, Menu, Tray, nativeImage } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import path from 'path';
 import os from 'os';
 import crypto from 'crypto';
 
 // ============================
-// 🔧 IMPORTAR EXPRESS CON REQUIRE (más compatible)
+// 🔧 IMPORTAR EXPRESS CON REQUIRE
 // ============================
 const express = require('express');
 const http = require('http');
 
-let mainWindow: BrowserWindow | null = null;
 let localServer: any = null;
+let tray: Tray | null = null;
+let serverPort: number = 3456;
 const LOCAL_PORT = 3456;
 
 const isDev = process.env.NODE_ENV === 'development';
 
 // ============================
-// LOG INICIAL PARA DEBUG
+// LOG INICIAL
 // ============================
 console.log('=================================');
 console.log('🚀 BARBERÍA APP INICIANDO');
 console.log('🔍 Modo:', isDev ? 'DESARROLLO' : 'PRODUCCIÓN');
-console.log('🔍 Express disponible:', typeof express);
 console.log('=================================');
 
 // ============================
@@ -101,85 +101,43 @@ ipcMain.on('install-update', () => {
 // ============================
 // EVENTOS AUTO-UPDATER
 // ============================
-autoUpdater.on('checking-for-update', () => {
-  console.log('🔍 Verificando actualizaciones...');
-  mainWindow?.webContents.send('update-status', {
-    status: 'checking',
-    message: 'Buscando actualizaciones...'
-  });
-});
-
 autoUpdater.on('update-available', (info) => {
   console.log('✅ Actualización disponible:', info.version);
-  mainWindow?.webContents.send('update-status', {
-    status: 'available',
-    message: `Nueva versión ${info.version} disponible`,
-    version: info.version
-  });
-});
-
-autoUpdater.on('update-not-available', (info) => {
-  console.log('ℹ️ No hay actualizaciones disponibles');
-  mainWindow?.webContents.send('update-status', {
-    status: 'not-available',
-    message: 'La aplicación está actualizada'
-  });
-});
-
-autoUpdater.on('download-progress', (progressObj) => {
-  const message = `Descargando: ${Math.round(progressObj.percent)}%`;
-  console.log(message);
-  mainWindow?.webContents.send('update-status', {
-    status: 'downloading',
-    message,
-    percent: progressObj.percent
-  });
+  if (tray) {
+    tray.setToolTip(`Barbería App - Actualización disponible: v${info.version}`);
+  }
 });
 
 autoUpdater.on('update-downloaded', (info) => {
   console.log('✅ Actualización descargada:', info.version);
-  mainWindow?.webContents.send('update-status', {
-    status: 'downloaded',
-    message: 'Actualización lista para instalar',
-    version: info.version
-  });
-});
-
-autoUpdater.on('error', (error) => {
-  console.error('❌ Error en auto-updater:', error);
-  mainWindow?.webContents.send('update-status', {
-    status: 'error',
-    message: 'Error al verificar actualizaciones',
-    error: error.message
-  });
+  if (tray) {
+    tray.setToolTip('Barbería App - Actualización lista para instalar');
+  }
 });
 
 // ============================
-// SERVIDOR LOCAL PARA PRODUCCIÓN
+// SERVIDOR LOCAL
 // ============================
 async function startLocalServer(): Promise<number> {
-  console.log('🌐 [startLocalServer] Función iniciada');
+  console.log('🌐 Iniciando servidor local...');
   
   return new Promise((resolve, reject) => {
     try {
-      console.log('🌐 [startLocalServer] Creando app Express...');
       const expressApp = express();
-      
       const distPath = path.join(__dirname, '../dist');
-      console.log('📂 [startLocalServer] Ruta dist:', distPath);
-      console.log('📂 [startLocalServer] __dirname:', __dirname);
       
-      // Verificar que el directorio existe
+      console.log('📂 Ruta dist:', distPath);
+      
       const fs = require('fs');
       if (!fs.existsSync(distPath)) {
-        console.error('❌ [startLocalServer] Directorio dist NO existe:', distPath);
+        console.error('❌ Directorio dist NO existe');
         reject(new Error('Directorio dist no encontrado'));
         return;
       }
-      console.log('✅ [startLocalServer] Directorio dist existe');
       
-      // Configurar middleware para servir archivos estáticos
-      console.log('🔧 [startLocalServer] Configurando middleware...');
+      console.log('✅ Directorio dist existe');
+      
+      // Configurar middleware
       expressApp.use(express.static(distPath, {
         setHeaders: (res: any, filePath: string) => {
           if (filePath.endsWith('.js')) {
@@ -192,37 +150,33 @@ async function startLocalServer(): Promise<number> {
         }
       }));
       
-      // Fallback para SPA routing
+      // SPA routing fallback
       expressApp.get('*', (req: any, res: any) => {
         res.sendFile(path.join(distPath, 'index.html'));
       });
       
-      console.log('🔧 [startLocalServer] Middleware configurado');
-      
       // Crear servidor HTTP
-      console.log('🌐 [startLocalServer] Creando servidor HTTP...');
       localServer = http.createServer(expressApp);
       
       // Intentar iniciar en el puerto especificado
-      console.log(`🌐 [startLocalServer] Intentando iniciar en puerto ${LOCAL_PORT}...`);
+      console.log(`🌐 Intentando iniciar en puerto ${LOCAL_PORT}...`);
       localServer.listen(LOCAL_PORT, 'localhost', () => {
         console.log('✅ ========================================');
-        console.log(`✅ SERVIDOR LOCAL INICIADO EXITOSAMENTE`);
+        console.log(`✅ SERVIDOR LOCAL INICIADO`);
         console.log(`✅ URL: http://localhost:${LOCAL_PORT}`);
         console.log('✅ ========================================');
         resolve(LOCAL_PORT);
       });
       
       localServer.on('error', (error: any) => {
-        console.error('❌ [startLocalServer] Error del servidor:', error);
+        console.error('❌ Error del servidor:', error);
         if (error.code === 'EADDRINUSE') {
           console.log(`⚠️ Puerto ${LOCAL_PORT} ocupado, intentando puerto aleatorio...`);
-          // Intentar con puerto aleatorio
           localServer = http.createServer(expressApp);
           localServer.listen(0, 'localhost', () => {
             const address = localServer?.address();
             if (address && typeof address === 'object') {
-              console.log(`✅ Servidor iniciado en puerto aleatorio: ${address.port}`);
+              console.log(`✅ Servidor iniciado en puerto: ${address.port}`);
               resolve(address.port);
             }
           });
@@ -232,78 +186,105 @@ async function startLocalServer(): Promise<number> {
       });
       
     } catch (error) {
-      console.error('❌ [startLocalServer] Error en try-catch:', error);
+      console.error('❌ Error en startLocalServer:', error);
       reject(error);
     }
   });
 }
 
 // ============================
-// CREAR VENTANA
+// CREAR ICONO EN BANDEJA DEL SISTEMA
 // ============================
-async function createWindow() {
-  console.log('🪟 [createWindow] Iniciando creación de ventana...');
-  console.log('🔍 [createWindow] isDev:', isDev);
-  console.log('🔍 [createWindow] NODE_ENV:', process.env.NODE_ENV);
+function createTray(port: number) {
+  console.log('🎨 Creando icono en bandeja del sistema...');
   
-  mainWindow = new BrowserWindow({
-    width: 1400,
-    height: 900,
-    minWidth: 1024,
-    minHeight: 768,
-    webPreferences: {
-      nodeIntegration: false,
-      contextIsolation: true,
-      preload: path.join(__dirname, 'preload.js'),
-    },
-    title: 'Barbería App',
-    show: false,
-  });
-
-  console.log('✅ [createWindow] BrowserWindow creada');
-
-  // ============================
-  // CARGAR LA APP
-  // ============================
-  if (isDev) {
-    console.log('🔧 [createWindow] Modo DESARROLLO');
-    console.log('🌐 [createWindow] Cargando desde Vite: http://localhost:5173');
-    await mainWindow.loadURL('http://localhost:5173');
-    mainWindow.webContents.openDevTools();
-  } else {
-    console.log('📦 [createWindow] Modo PRODUCCIÓN');
-    
-    try {
-      console.log('🚀 [createWindow] Llamando a startLocalServer()...');
-      const port = await startLocalServer();
-      const url = `http://localhost:${port}`;
-      
-      console.log('✅ [createWindow] Servidor iniciado exitosamente');
-      console.log('🌐 [createWindow] Cargando desde:', url);
-      
-      await mainWindow.loadURL(url);
-      
-      // 🔧 ABRIR DEVTOOLS EN PRODUCCIÓN PARA DEBUG
-      console.log('🔧 [createWindow] Abriendo DevTools para debugging...');
-      mainWindow.webContents.openDevTools();
-      
-    } catch (error) {
-      console.error('❌ [createWindow] Error iniciando servidor:', error);
-      
-      // Fallback a file://
-      const indexPath = path.join(__dirname, '../dist/index.html');
-      console.log('⚠️ [createWindow] FALLBACK: Cargando desde archivo:', indexPath);
-      await mainWindow.loadFile(indexPath);
-      
-      // Abrir DevTools también en fallback
-      mainWindow.webContents.openDevTools();
-    }
+  // Intentar cargar el icono
+  let iconPath = path.join(__dirname, '../build/icons/win/icon.ico');
+  
+  // Si no existe, usar un icono por defecto
+  const fs = require('fs');
+  if (!fs.existsSync(iconPath)) {
+    // Crear imagen por defecto si no hay icono
+    iconPath = nativeImage.createEmpty().toDataURL();
   }
+  
+  tray = new Tray(iconPath);
+  
+  const contextMenu = Menu.buildFromTemplate([
+    {
+      label: 'Barbería App',
+      enabled: false
+    },
+    {
+      type: 'separator'
+    },
+    {
+      label: `🌐 Abrir en navegador`,
+      click: () => {
+        shell.openExternal(`http://localhost:${port}`);
+      }
+    },
+    {
+      label: `📋 Copiar URL`,
+      click: () => {
+        const { clipboard } = require('electron');
+        clipboard.writeText(`http://localhost:${port}`);
+      }
+    },
+    {
+      type: 'separator'
+    },
+    {
+      label: '🔄 Buscar actualizaciones',
+      click: () => {
+        if (!isDev) {
+          autoUpdater.checkForUpdates();
+        }
+      }
+    },
+    {
+      type: 'separator'
+    },
+    {
+      label: '❌ Salir',
+      click: () => {
+        app.quit();
+      }
+    }
+  ]);
+  
+  tray.setToolTip('Barbería App - Servidor corriendo');
+  tray.setContextMenu(contextMenu);
+  
+  // Click en el icono abre el navegador
+  tray.on('click', () => {
+    shell.openExternal(`http://localhost:${port}`);
+  });
+  
+  console.log('✅ Icono en bandeja creado');
+}
 
-  // Mostrar ventana cuando esté lista
-  mainWindow.once('ready-to-show', () => {
-    console.log('✅ [createWindow] Ventana lista para mostrar');
-    mainWindow?.show();
+// ============================
+// INICIAR APLICACIÓN
+// ============================
+async function startApp() {
+  console.log('🌐 Iniciando aplicación...');
+  
+  try {
+    // Iniciar servidor
+    serverPort = await startLocalServer();
+    const url = `http://localhost:${serverPort}`;
+    
+    // Crear icono en bandeja
+    createTray(serverPort);
+    
+    console.log('🌐 Abriendo navegador...');
+    console.log('🌐 URL:', url);
+    
+    // Abrir en el navegador predeterminado
+    await shell.openExternal(url);
+    
+    console.log('✅ Navegador abierto exitosamente');
     
     // Verificar actualizaciones después de 3 segundos
     if (!isDev) {
@@ -311,65 +292,65 @@ async function createWindow() {
         autoUpdater.checkForUpdates();
       }, 3000);
     }
-  });
-
-  // Debug: Capturar errores de carga
-  mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription, validatedURL) => {
-    console.error('❌ [WebContents] Fallo al cargar:');
-    console.error('   URL:', validatedURL);
-    console.error('   Error:', errorCode, '-', errorDescription);
-  });
-
-  // Debug: Ver mensajes de consola del frontend
-  mainWindow.webContents.on('console-message', (event, level, message, line, sourceId) => {
-    const levels = ['verbose', 'info', 'warning', 'error'];
-    console.log(`[Frontend ${levels[level]}]:`, message);
-  });
-
-  mainWindow.on('closed', () => {
-    console.log('🛑 [createWindow] Ventana cerrada');
-    mainWindow = null;
-  });
+    
+  } catch (error) {
+    console.error('❌ Error al iniciar:', error);
+    app.quit();
+  }
 }
 
 // ============================
 // CICLO DE VIDA DE LA APP
 // ============================
 app.whenReady().then(() => {
-  console.log('✅ [App] Electron ready, creando ventana...');
-  createWindow();
+  console.log('✅ [App] Electron ready');
+  
+  if (isDev) {
+    console.log('🔧 [App] Modo desarrollo');
+  } else {
+    console.log('📦 [App] Modo producción');
+    startApp();
+  }
 });
 
-app.on('window-all-closed', () => {
-  console.log('🛑 [App] Todas las ventanas cerradas');
-  
-  // Cerrar el servidor local si existe
-  if (localServer) {
-    console.log('🛑 [App] Cerrando servidor local...');
-    localServer.close();
-    localServer = null;
-  }
-  
-  if (process.platform !== 'darwin') {
-    app.quit();
-  }
+// Evitar que la app se cierre cuando no hay ventanas
+app.on('window-all-closed', (e: any) => {
+  // No hacer nada - la app sigue corriendo en la bandeja
+  console.log('ℹ️ [App] App corriendo en segundo plano');
 });
 
 app.on('activate', () => {
-  console.log('🔄 [App] Activate event');
-  if (BrowserWindow.getAllWindows().length === 0) {
-    createWindow();
+  // Reabrir navegador si está en macOS
+  if (localServer && process.platform === 'darwin') {
+    shell.openExternal(`http://localhost:${serverPort}`);
   }
 });
 
-// Limpiar servidor al salir
+// Limpiar al salir
 app.on('before-quit', () => {
-  console.log('🛑 [App] Before quit event');
+  console.log('🛑 [App] Cerrando aplicación...');
+  
+  if (tray) {
+    tray.destroy();
+    tray = null;
+  }
+  
   if (localServer) {
     console.log('🛑 [App] Cerrando servidor local...');
     localServer.close();
     localServer = null;
   }
+});
+
+// Permitir cerrar con Ctrl+C
+process.on('SIGINT', () => {
+  console.log('🛑 [App] SIGINT recibido, cerrando...');
+  app.quit();
+});
+
+process.on('SIGTERM', () => {
+  console.log('🛑 [App] SIGTERM recibido, cerrando...');
+  app.quit();
 });
 
 console.log('✅ main.ts cargado completamente');
