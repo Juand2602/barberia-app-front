@@ -218,6 +218,17 @@ async function createWindow() {
   });
 
   // ============================
+  // 🔧 DEBUGGING: ABRIR DEVTOOLS EN PRODUCCIÓN
+  // ============================
+  if (!isDev) {
+    // Esperar a que la ventana esté lista antes de abrir DevTools
+    mainWindow.webContents.once('did-finish-load', () => {
+      console.log('🔧 Abriendo DevTools para debugging...');
+      mainWindow?.webContents.openDevTools();
+    });
+  }
+
+  // ============================
   // CARGAR LA APP
   // ============================
   if (isDev) {
