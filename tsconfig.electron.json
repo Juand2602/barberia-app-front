@@ -1,17 +1,16 @@
 {
   "compilerOptions": {
-    "target": "ES2022", // Usa una versión más moderna de ES
-    "module": "ESNext", // <-- ¡CAMBIO CLAVE! Usa ESNext para import/export
-    "moduleResolution": "Node", // "Node" es suficiente y compatible
-    "lib": ["ES2022"],
+    "target": "ES2020",
+    "module": "commonjs",
+    "lib": ["ES2020"],
     "outDir": "./dist-electron",
     "rootDir": "./electron",
     "strict": true,
     "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
+    "moduleResolution": "node",
     "types": ["node"],
     "baseUrl": ".",
     "paths": {

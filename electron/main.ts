@@ -1,19 +1,15 @@
-// electron/main.ts
-
 import { app, BrowserWindow, ipcMain } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import path from 'path';
 import os from 'os';
 import crypto from 'crypto';
-// 1. Importa electron-serve
-import serve from 'electron-serve';
 
 let mainWindow: BrowserWindow | null = null;
 
 const isDev = process.env.NODE_ENV === 'development';
 
 // ============================
-// CONFIGURACIÓN AUTO-UPDATER (SIN CAMBIOS)
+// CONFIGURACIÓN AUTO-UPDATER
 // ============================
 autoUpdater.autoDownload = false;
 autoUpdater.autoInstallOnAppQuit = true;
@@ -26,7 +22,7 @@ autoUpdater.logger = {
 };
 
 // ============================
-// FUNCIONES PARA MACHINE ID (SIN CAMBIOS)
+// FUNCIONES PARA MACHINE ID
 // ============================
 function getMachineId(): string {
   const networkInterfaces = os.networkInterfaces();
@@ -58,7 +54,7 @@ function getSystemInfo() {
 }
 
 // ============================
-// IPC HANDLERS (SIN CAMBIOS)
+// IPC HANDLERS
 // ============================
 ipcMain.handle('get-machine-id', () => {
   return getMachineId();
@@ -86,7 +82,7 @@ ipcMain.on('install-update', () => {
 });
 
 // ============================
-// EVENTOS AUTO-UPDATER (SIN CAMBIOS)
+// EVENTOS AUTO-UPDATER
 // ============================
 autoUpdater.on('checking-for-update', () => {
   console.log('🔍 Verificando actualizaciones...');
@@ -153,14 +149,14 @@ function createWindow() {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
-      preload: path.join(__dirname, 'preload.js'), // Asegúrate que preload.js esté en la misma carpeta que main.js
+      preload: path.join(__dirname, 'preload.js'),
     },
     title: 'Barbería App',
-    show: false,
+    show: false, // No mostrar hasta que esté lista
   });
 
   // ============================
-  // CARGAR LA APP (CAMBIO PRINCIPAL AQUÍ)
+  // CARGAR LA APP
   // ============================
   if (isDev) {
     // Desarrollo: Vite dev server
@@ -168,16 +164,15 @@ function createWindow() {
     mainWindow.loadURL('http://localhost:5173');
     mainWindow.webContents.openDevTools();
   } else {
-    // Producción: Usar electron-serve
-    // 2. Crea la instancia de serve apuntando a la carpeta 'dist'
-    const loadURL = serve({ directory: 'dist' });
+    // Producción: Archivos compilados
+    const indexPath = path.join(__dirname, '../dist/index.html');
     
     console.log('📦 Modo producción');
-    console.log('🌐 Sirviendo la app desde localhost usando electron-serve');
+    console.log('📂 __dirname:', __dirname);
+    console.log('📂 Cargando desde:', indexPath);
     
-    // 3. Usa loadURL para cargar la aplicación
-    loadURL(mainWindow).catch(err => {
-      console.error('❌ Error al cargar la app con electron-serve:', err);
+    mainWindow.loadFile(indexPath).catch(err => {
+      console.error('❌ Error cargando index.html:', err);
     });
   }
 
@@ -186,6 +181,7 @@ function createWindow() {
     console.log('✅ Ventana lista para mostrar');
     mainWindow?.show();
     
+    // Verificar actualizaciones después de 3 segundos
     if (!isDev) {
       console.log('🚀 Programando verificación de actualizaciones...');
       setTimeout(() => {
@@ -213,7 +209,7 @@ function createWindow() {
 }
 
 // ============================
-// CICLO DE VIDA DE LA APP (SIN CAMBIOS)
+// CICLO DE VIDA DE LA APP
 // ============================
 app.whenReady().then(createWindow);
 

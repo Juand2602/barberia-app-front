@@ -26,7 +26,6 @@
     "axios": "^1.6.7",
     "clsx": "^2.1.0",
     "date-fns": "^3.3.1",
-    "electron-serve": "^3.0.0",
     "electron-updater": "^6.1.8",
     "exceljs": "^4.4.0",
     "jspdf": "^3.0.3",
@@ -83,9 +82,6 @@
     "asarUnpack": [
       "dist/**"
     ],
-    "extraMetadata": {
-      "main": "dist-electron/main.js"
-    },
     "win": {
       "target": [
         {
