@@ -3,14 +3,27 @@ import { autoUpdater } from 'electron-updater';
 import path from 'path';
 import os from 'os';
 import crypto from 'crypto';
-import express from 'express';
-import http from 'http';
+
+// ============================
+// 🔧 IMPORTAR EXPRESS CON REQUIRE (más compatible)
+// ============================
+const express = require('express');
+const http = require('http');
 
 let mainWindow: BrowserWindow | null = null;
-let localServer: http.Server | null = null;
-const LOCAL_PORT = 3456; // Puerto para el servidor local en producción
+let localServer: any = null;
+const LOCAL_PORT = 3456;
 
 const isDev = process.env.NODE_ENV === 'development';
+
+// ============================
+// LOG INICIAL PARA DEBUG
+// ============================
+console.log('=================================');
+console.log('🚀 BARBERÍA APP INICIANDO');
+console.log('🔍 Modo:', isDev ? 'DESARROLLO' : 'PRODUCCIÓN');
+console.log('🔍 Express disponible:', typeof express);
+console.log('=================================');
 
 // ============================
 // CONFIGURACIÓN AUTO-UPDATER
@@ -145,57 +158,83 @@ autoUpdater.on('error', (error) => {
 // SERVIDOR LOCAL PARA PRODUCCIÓN
 // ============================
 async function startLocalServer(): Promise<number> {
+  console.log('🌐 [startLocalServer] Función iniciada');
+  
   return new Promise((resolve, reject) => {
-    const expressApp = express();
-    const distPath = path.join(__dirname, '../dist');
-    
-    console.log('🌐 Iniciando servidor local...');
-    console.log('📂 Sirviendo desde:', distPath);
-    
-    // Configurar middleware para servir archivos estáticos
-    expressApp.use(express.static(distPath, {
-      setHeaders: (res, filePath) => {
-        // Configurar headers correctos para diferentes tipos de archivos
-        if (filePath.endsWith('.js')) {
-          res.setHeader('Content-Type', 'application/javascript');
-        } else if (filePath.endsWith('.css')) {
-          res.setHeader('Content-Type', 'text/css');
-        } else if (filePath.endsWith('.html')) {
-          res.setHeader('Content-Type', 'text/html');
-        }
+    try {
+      console.log('🌐 [startLocalServer] Creando app Express...');
+      const expressApp = express();
+      
+      const distPath = path.join(__dirname, '../dist');
+      console.log('📂 [startLocalServer] Ruta dist:', distPath);
+      console.log('📂 [startLocalServer] __dirname:', __dirname);
+      
+      // Verificar que el directorio existe
+      const fs = require('fs');
+      if (!fs.existsSync(distPath)) {
+        console.error('❌ [startLocalServer] Directorio dist NO existe:', distPath);
+        reject(new Error('Directorio dist no encontrado'));
+        return;
       }
-    }));
-    
-    // Fallback para SPA routing - siempre devolver index.html
-    expressApp.get('*', (req, res) => {
-      res.sendFile(path.join(distPath, 'index.html'));
-    });
-    
-    // Crear servidor HTTP
-    localServer = http.createServer(expressApp);
-    
-    // Intentar iniciar en el puerto especificado
-    localServer.listen(LOCAL_PORT, 'localhost', () => {
-      console.log(`✅ Servidor local iniciado en http://localhost:${LOCAL_PORT}`);
-      resolve(LOCAL_PORT);
-    });
-    
-    localServer.on('error', (error: NodeJS.ErrnoException) => {
-      if (error.code === 'EADDRINUSE') {
-        console.error(`❌ Puerto ${LOCAL_PORT} ya está en uso`);
-        // Intentar con puerto aleatorio
-        localServer = http.createServer(expressApp);
-        localServer.listen(0, 'localhost', () => {
-          const address = localServer?.address();
-          if (address && typeof address === 'object') {
-            console.log(`✅ Servidor local iniciado en puerto aleatorio: ${address.port}`);
-            resolve(address.port);
+      console.log('✅ [startLocalServer] Directorio dist existe');
+      
+      // Configurar middleware para servir archivos estáticos
+      console.log('🔧 [startLocalServer] Configurando middleware...');
+      expressApp.use(express.static(distPath, {
+        setHeaders: (res: any, filePath: string) => {
+          if (filePath.endsWith('.js')) {
+            res.setHeader('Content-Type', 'application/javascript');
+          } else if (filePath.endsWith('.css')) {
+            res.setHeader('Content-Type', 'text/css');
+          } else if (filePath.endsWith('.html')) {
+            res.setHeader('Content-Type', 'text/html');
           }
-        });
-      } else {
-        reject(error);
-      }
-    });
+        }
+      }));
+      
+      // Fallback para SPA routing
+      expressApp.get('*', (req: any, res: any) => {
+        res.sendFile(path.join(distPath, 'index.html'));
+      });
+      
+      console.log('🔧 [startLocalServer] Middleware configurado');
+      
+      // Crear servidor HTTP
+      console.log('🌐 [startLocalServer] Creando servidor HTTP...');
+      localServer = http.createServer(expressApp);
+      
+      // Intentar iniciar en el puerto especificado
+      console.log(`🌐 [startLocalServer] Intentando iniciar en puerto ${LOCAL_PORT}...`);
+      localServer.listen(LOCAL_PORT, 'localhost', () => {
+        console.log('✅ ========================================');
+        console.log(`✅ SERVIDOR LOCAL INICIADO EXITOSAMENTE`);
+        console.log(`✅ URL: http://localhost:${LOCAL_PORT}`);
+        console.log('✅ ========================================');
+        resolve(LOCAL_PORT);
+      });
+      
+      localServer.on('error', (error: any) => {
+        console.error('❌ [startLocalServer] Error del servidor:', error);
+        if (error.code === 'EADDRINUSE') {
+          console.log(`⚠️ Puerto ${LOCAL_PORT} ocupado, intentando puerto aleatorio...`);
+          // Intentar con puerto aleatorio
+          localServer = http.createServer(expressApp);
+          localServer.listen(0, 'localhost', () => {
+            const address = localServer?.address();
+            if (address && typeof address === 'object') {
+              console.log(`✅ Servidor iniciado en puerto aleatorio: ${address.port}`);
+              resolve(address.port);
+            }
+          });
+        } else {
+          reject(error);
+        }
+      });
+      
+    } catch (error) {
+      console.error('❌ [startLocalServer] Error en try-catch:', error);
+      reject(error);
+    }
   });
 }
 
@@ -203,6 +242,10 @@ async function startLocalServer(): Promise<number> {
 // CREAR VENTANA
 // ============================
 async function createWindow() {
+  console.log('🪟 [createWindow] Iniciando creación de ventana...');
+  console.log('🔍 [createWindow] isDev:', isDev);
+  console.log('🔍 [createWindow] NODE_ENV:', process.env.NODE_ENV);
+  
   mainWindow = new BrowserWindow({
     width: 1400,
     height: 900,
@@ -217,52 +260,53 @@ async function createWindow() {
     show: false,
   });
 
-  // ============================
-  // 🔧 DEBUGGING: ABRIR DEVTOOLS EN PRODUCCIÓN
-  // ============================
-  if (!isDev) {
-    // Esperar a que la ventana esté lista antes de abrir DevTools
-    mainWindow.webContents.once('did-finish-load', () => {
-      console.log('🔧 Abriendo DevTools para debugging...');
-      mainWindow?.webContents.openDevTools();
-    });
-  }
+  console.log('✅ [createWindow] BrowserWindow creada');
 
   // ============================
   // CARGAR LA APP
   // ============================
   if (isDev) {
-    // Desarrollo: Vite dev server
-    console.log('🔧 Modo desarrollo');
-    mainWindow.loadURL('http://localhost:5173');
+    console.log('🔧 [createWindow] Modo DESARROLLO');
+    console.log('🌐 [createWindow] Cargando desde Vite: http://localhost:5173');
+    await mainWindow.loadURL('http://localhost:5173');
     mainWindow.webContents.openDevTools();
   } else {
-    // 🚀 PRODUCCIÓN: Servidor local
+    console.log('📦 [createWindow] Modo PRODUCCIÓN');
+    
     try {
+      console.log('🚀 [createWindow] Llamando a startLocalServer()...');
       const port = await startLocalServer();
       const url = `http://localhost:${port}`;
       
-      console.log('📦 Modo producción con servidor local');
-      console.log('🌐 Cargando desde:', url);
+      console.log('✅ [createWindow] Servidor iniciado exitosamente');
+      console.log('🌐 [createWindow] Cargando desde:', url);
       
       await mainWindow.loadURL(url);
+      
+      // 🔧 ABRIR DEVTOOLS EN PRODUCCIÓN PARA DEBUG
+      console.log('🔧 [createWindow] Abriendo DevTools para debugging...');
+      mainWindow.webContents.openDevTools();
+      
     } catch (error) {
-      console.error('❌ Error iniciando servidor local:', error);
-      // Fallback: intentar cargar desde archivos
+      console.error('❌ [createWindow] Error iniciando servidor:', error);
+      
+      // Fallback a file://
       const indexPath = path.join(__dirname, '../dist/index.html');
-      console.log('⚠️ Fallback: cargando desde archivo:', indexPath);
+      console.log('⚠️ [createWindow] FALLBACK: Cargando desde archivo:', indexPath);
       await mainWindow.loadFile(indexPath);
+      
+      // Abrir DevTools también en fallback
+      mainWindow.webContents.openDevTools();
     }
   }
 
   // Mostrar ventana cuando esté lista
   mainWindow.once('ready-to-show', () => {
-    console.log('✅ Ventana lista para mostrar');
+    console.log('✅ [createWindow] Ventana lista para mostrar');
     mainWindow?.show();
     
     // Verificar actualizaciones después de 3 segundos
     if (!isDev) {
-      console.log('🚀 Programando verificación de actualizaciones...');
       setTimeout(() => {
         autoUpdater.checkForUpdates();
       }, 3000);
@@ -271,7 +315,7 @@ async function createWindow() {
 
   // Debug: Capturar errores de carga
   mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription, validatedURL) => {
-    console.error('❌ Fallo al cargar:');
+    console.error('❌ [WebContents] Fallo al cargar:');
     console.error('   URL:', validatedURL);
     console.error('   Error:', errorCode, '-', errorDescription);
   });
@@ -283,6 +327,7 @@ async function createWindow() {
   });
 
   mainWindow.on('closed', () => {
+    console.log('🛑 [createWindow] Ventana cerrada');
     mainWindow = null;
   });
 }
@@ -290,12 +335,17 @@ async function createWindow() {
 // ============================
 // CICLO DE VIDA DE LA APP
 // ============================
-app.whenReady().then(createWindow);
+app.whenReady().then(() => {
+  console.log('✅ [App] Electron ready, creando ventana...');
+  createWindow();
+});
 
 app.on('window-all-closed', () => {
+  console.log('🛑 [App] Todas las ventanas cerradas');
+  
   // Cerrar el servidor local si existe
   if (localServer) {
-    console.log('🛑 Cerrando servidor local...');
+    console.log('🛑 [App] Cerrando servidor local...');
     localServer.close();
     localServer = null;
   }
@@ -306,6 +356,7 @@ app.on('window-all-closed', () => {
 });
 
 app.on('activate', () => {
+  console.log('🔄 [App] Activate event');
   if (BrowserWindow.getAllWindows().length === 0) {
     createWindow();
   }
@@ -313,9 +364,12 @@ app.on('activate', () => {
 
 // Limpiar servidor al salir
 app.on('before-quit', () => {
+  console.log('🛑 [App] Before quit event');
   if (localServer) {
-    console.log('🛑 Cerrando servidor local...');
+    console.log('🛑 [App] Cerrando servidor local...');
     localServer.close();
     localServer = null;
   }
 });
+
+console.log('✅ main.ts cargado completamente');
