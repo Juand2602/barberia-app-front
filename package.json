@@ -1,6 +1,6 @@
 {
   "name": "barberia-app",
-  "version": "1.1.6",
+  "version": "1.1.7",
   "description": "Sistema de gestión integral para barbería",
   "main": "dist-electron/main.js",
   "author": "Juan Diego Sepulveda Herrera",
