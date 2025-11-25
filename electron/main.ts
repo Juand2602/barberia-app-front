@@ -3,8 +3,12 @@ import { autoUpdater } from 'electron-updater';
 import path from 'path';
 import os from 'os';
 import crypto from 'crypto';
+import express from 'express';
+import http from 'http';
 
 let mainWindow: BrowserWindow | null = null;
+let localServer: http.Server | null = null;
+const LOCAL_PORT = 3456; // Puerto para el servidor local en producción
 
 const isDev = process.env.NODE_ENV === 'development';
 
@@ -138,9 +142,67 @@ autoUpdater.on('error', (error) => {
 });
 
 // ============================
+// SERVIDOR LOCAL PARA PRODUCCIÓN
+// ============================
+async function startLocalServer(): Promise<number> {
+  return new Promise((resolve, reject) => {
+    const expressApp = express();
+    const distPath = path.join(__dirname, '../dist');
+    
+    console.log('🌐 Iniciando servidor local...');
+    console.log('📂 Sirviendo desde:', distPath);
+    
+    // Configurar middleware para servir archivos estáticos
+    expressApp.use(express.static(distPath, {
+      setHeaders: (res, filePath) => {
+        // Configurar headers correctos para diferentes tipos de archivos
+        if (filePath.endsWith('.js')) {
+          res.setHeader('Content-Type', 'application/javascript');
+        } else if (filePath.endsWith('.css')) {
+          res.setHeader('Content-Type', 'text/css');
+        } else if (filePath.endsWith('.html')) {
+          res.setHeader('Content-Type', 'text/html');
+        }
+      }
+    }));
+    
+    // Fallback para SPA routing - siempre devolver index.html
+    expressApp.get('*', (req, res) => {
+      res.sendFile(path.join(distPath, 'index.html'));
+    });
+    
+    // Crear servidor HTTP
+    localServer = http.createServer(expressApp);
+    
+    // Intentar iniciar en el puerto especificado
+    localServer.listen(LOCAL_PORT, 'localhost', () => {
+      console.log(`✅ Servidor local iniciado en http://localhost:${LOCAL_PORT}`);
+      resolve(LOCAL_PORT);
+    });
+    
+    localServer.on('error', (error: NodeJS.ErrnoException) => {
+      if (error.code === 'EADDRINUSE') {
+        console.error(`❌ Puerto ${LOCAL_PORT} ya está en uso`);
+        // Intentar con puerto aleatorio
+        localServer = http.createServer(expressApp);
+        localServer.listen(0, 'localhost', () => {
+          const address = localServer?.address();
+          if (address && typeof address === 'object') {
+            console.log(`✅ Servidor local iniciado en puerto aleatorio: ${address.port}`);
+            resolve(address.port);
+          }
+        });
+      } else {
+        reject(error);
+      }
+    });
+  });
+}
+
+// ============================
 // CREAR VENTANA
 // ============================
-function createWindow() {
+async function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1400,
     height: 900,
@@ -152,7 +214,7 @@ function createWindow() {
       preload: path.join(__dirname, 'preload.js'),
     },
     title: 'Barbería App',
-    show: false, // No mostrar hasta que esté lista
+    show: false,
   });
 
   // ============================
@@ -164,16 +226,22 @@ function createWindow() {
     mainWindow.loadURL('http://localhost:5173');
     mainWindow.webContents.openDevTools();
   } else {
-    // Producción: Archivos compilados
-    const indexPath = path.join(__dirname, '../dist/index.html');
-    
-    console.log('📦 Modo producción');
-    console.log('📂 __dirname:', __dirname);
-    console.log('📂 Cargando desde:', indexPath);
-    
-    mainWindow.loadFile(indexPath).catch(err => {
-      console.error('❌ Error cargando index.html:', err);
-    });
+    // 🚀 PRODUCCIÓN: Servidor local
+    try {
+      const port = await startLocalServer();
+      const url = `http://localhost:${port}`;
+      
+      console.log('📦 Modo producción con servidor local');
+      console.log('🌐 Cargando desde:', url);
+      
+      await mainWindow.loadURL(url);
+    } catch (error) {
+      console.error('❌ Error iniciando servidor local:', error);
+      // Fallback: intentar cargar desde archivos
+      const indexPath = path.join(__dirname, '../dist/index.html');
+      console.log('⚠️ Fallback: cargando desde archivo:', indexPath);
+      await mainWindow.loadFile(indexPath);
+    }
   }
 
   // Mostrar ventana cuando esté lista
@@ -214,6 +282,13 @@ function createWindow() {
 app.whenReady().then(createWindow);
 
 app.on('window-all-closed', () => {
+  // Cerrar el servidor local si existe
+  if (localServer) {
+    console.log('🛑 Cerrando servidor local...');
+    localServer.close();
+    localServer = null;
+  }
+  
   if (process.platform !== 'darwin') {
     app.quit();
   }
@@ -222,5 +297,14 @@ app.on('window-all-closed', () => {
 app.on('activate', () => {
   if (BrowserWindow.getAllWindows().length === 0) {
     createWindow();
+  }
+});
+
+// Limpiar servidor al salir
+app.on('before-quit', () => {
+  if (localServer) {
+    console.log('🛑 Cerrando servidor local...');
+    localServer.close();
+    localServer = null;
   }
 });
