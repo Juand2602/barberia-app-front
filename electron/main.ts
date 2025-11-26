@@ -1,4 +1,4 @@
-import { app, ipcMain, shell, Menu, Tray, nativeImage } from 'electron';
+import { app, ipcMain, shell } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import path from 'path';
 import os from 'os';
@@ -11,8 +11,6 @@ const express = require('express');
 const http = require('http');
 
 let localServer: any = null;
-let tray: Tray | null = null;
-let serverPort: number = 3456;
 const LOCAL_PORT = 3456;
 
 const isDev = process.env.NODE_ENV === 'development';
@@ -101,18 +99,28 @@ ipcMain.on('install-update', () => {
 // ============================
 // EVENTOS AUTO-UPDATER
 // ============================
+autoUpdater.on('checking-for-update', () => {
+  console.log('🔍 Verificando actualizaciones...');
+});
+
 autoUpdater.on('update-available', (info) => {
   console.log('✅ Actualización disponible:', info.version);
-  if (tray) {
-    tray.setToolTip(`Barbería App - Actualización disponible: v${info.version}`);
-  }
+});
+
+autoUpdater.on('update-not-available', (info) => {
+  console.log('ℹ️ No hay actualizaciones disponibles');
+});
+
+autoUpdater.on('download-progress', (progressObj) => {
+  console.log(`Descargando: ${Math.round(progressObj.percent)}%`);
 });
 
 autoUpdater.on('update-downloaded', (info) => {
   console.log('✅ Actualización descargada:', info.version);
-  if (tray) {
-    tray.setToolTip('Barbería App - Actualización lista para instalar');
-  }
+});
+
+autoUpdater.on('error', (error) => {
+  console.error('❌ Error en auto-updater:', error);
 });
 
 // ============================
@@ -193,98 +201,23 @@ async function startLocalServer(): Promise<number> {
 }
 
 // ============================
-// CREAR ICONO EN BANDEJA DEL SISTEMA
+// ABRIR EN NAVEGADOR
 // ============================
-function createTray(port: number) {
-  console.log('🎨 Creando icono en bandeja del sistema...');
-  
-  // Intentar cargar el icono
-  let iconPath = path.join(__dirname, '../build/icons/win/icon.ico');
-  
-  // Si no existe, usar un icono por defecto
-  const fs = require('fs');
-  if (!fs.existsSync(iconPath)) {
-    // Crear imagen por defecto si no hay icono
-    iconPath = nativeImage.createEmpty().toDataURL();
-  }
-  
-  tray = new Tray(iconPath);
-  
-  const contextMenu = Menu.buildFromTemplate([
-    {
-      label: 'Barbería App',
-      enabled: false
-    },
-    {
-      type: 'separator'
-    },
-    {
-      label: `🌐 Abrir en navegador`,
-      click: () => {
-        shell.openExternal(`http://localhost:${port}`);
-      }
-    },
-    {
-      label: `📋 Copiar URL`,
-      click: () => {
-        const { clipboard } = require('electron');
-        clipboard.writeText(`http://localhost:${port}`);
-      }
-    },
-    {
-      type: 'separator'
-    },
-    {
-      label: '🔄 Buscar actualizaciones',
-      click: () => {
-        if (!isDev) {
-          autoUpdater.checkForUpdates();
-        }
-      }
-    },
-    {
-      type: 'separator'
-    },
-    {
-      label: '❌ Salir',
-      click: () => {
-        app.quit();
-      }
-    }
-  ]);
-  
-  tray.setToolTip('Barbería App - Servidor corriendo');
-  tray.setContextMenu(contextMenu);
-  
-  // Click en el icono abre el navegador
-  tray.on('click', () => {
-    shell.openExternal(`http://localhost:${port}`);
-  });
-  
-  console.log('✅ Icono en bandeja creado');
-}
-
-// ============================
-// INICIAR APLICACIÓN
-// ============================
-async function startApp() {
-  console.log('🌐 Iniciando aplicación...');
+async function openInBrowser() {
+  console.log('🌐 [openInBrowser] Iniciando...');
   
   try {
     // Iniciar servidor
-    serverPort = await startLocalServer();
-    const url = `http://localhost:${serverPort}`;
+    const port = await startLocalServer();
+    const url = `http://localhost:${port}`;
     
-    // Crear icono en bandeja
-    createTray(serverPort);
-    
-    console.log('🌐 Abriendo navegador...');
-    console.log('🌐 URL:', url);
+    console.log('🌐 [openInBrowser] Abriendo navegador...');
+    console.log('🌐 [openInBrowser] URL:', url);
     
     // Abrir en el navegador predeterminado
     await shell.openExternal(url);
     
-    console.log('✅ Navegador abierto exitosamente');
+    console.log('✅ [openInBrowser] Navegador abierto exitosamente');
     
     // Verificar actualizaciones después de 3 segundos
     if (!isDev) {
@@ -294,8 +227,7 @@ async function startApp() {
     }
     
   } catch (error) {
-    console.error('❌ Error al iniciar:', error);
-    app.quit();
+    console.error('❌ [openInBrowser] Error:', error);
   }
 }
 
@@ -306,35 +238,34 @@ app.whenReady().then(() => {
   console.log('✅ [App] Electron ready');
   
   if (isDev) {
-    console.log('🔧 [App] Modo desarrollo');
+    console.log('🔧 [App] Modo desarrollo - abrir http://localhost:5173 manualmente');
   } else {
-    console.log('📦 [App] Modo producción');
-    startApp();
+    console.log('📦 [App] Modo producción - abriendo navegador...');
+    openInBrowser();
   }
 });
 
 // Evitar que la app se cierre cuando no hay ventanas
+// (necesario porque no abrimos ventanas de Electron)
 app.on('window-all-closed', (e: any) => {
-  // No hacer nada - la app sigue corriendo en la bandeja
-  console.log('ℹ️ [App] App corriendo en segundo plano');
+  // No hacer nada - mantener la app corriendo
+  console.log('ℹ️ [App] No hay ventanas, pero la app sigue corriendo');
 });
 
 app.on('activate', () => {
-  // Reabrir navegador si está en macOS
+  console.log('🔄 [App] Activate event');
+  // En macOS, reabrir el navegador si se hace click en el dock
   if (localServer && process.platform === 'darwin') {
-    shell.openExternal(`http://localhost:${serverPort}`);
+    const address = localServer.address();
+    if (address && typeof address === 'object') {
+      shell.openExternal(`http://localhost:${address.port}`);
+    }
   }
 });
 
-// Limpiar al salir
+// Limpiar servidor al salir
 app.on('before-quit', () => {
   console.log('🛑 [App] Cerrando aplicación...');
-  
-  if (tray) {
-    tray.destroy();
-    tray = null;
-  }
-  
   if (localServer) {
     console.log('🛑 [App] Cerrando servidor local...');
     localServer.close();
@@ -342,7 +273,7 @@ app.on('before-quit', () => {
   }
 });
 
-// Permitir cerrar con Ctrl+C
+// Permitir cerrar la app con Ctrl+C en consola
 process.on('SIGINT', () => {
   console.log('🛑 [App] SIGINT recibido, cerrando...');
   app.quit();
