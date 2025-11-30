@@ -1,4 +1,4 @@
-// src/components/forms/IngresoForm.tsx - ACTUALIZADO CON PAGO MIXTO
+// src/components/forms/IngresoForm.tsx - COMPLETO CON EDICIÓN
 
 import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -8,12 +8,13 @@ import { Button } from '@components/ui/Button';
 import { clientesService } from '@services/clientes.service';
 import { empleadosService } from '@services/empleados.service';
 import { serviciosService } from '@services/servicios.service';
-import { CreateTransaccionDTO, TransaccionItemDTO } from '@/types/transaccion.types';
+import { CreateTransaccionDTO, TransaccionItemDTO, Transaccion } from '@/types/transaccion.types';
 import { Cliente } from '@/types/cliente.types';
 import { Empleado } from '@/types/empleado.types';
 import { Servicio } from '@/types/servicio.types';
 
 interface IngresoFormProps {
+  initialData?: Transaccion;
   onSubmit: (data: CreateTransaccionDTO) => void;
   onCancel: () => void;
   isLoading?: boolean;
@@ -24,7 +25,7 @@ interface ItemFormulario extends TransaccionItemDTO {
   nombreServicio?: string;
 }
 
-type MetodoPago = 'EFECTIVO' | 'TRANSFERENCIA' | 'MIXTO'; // ✅ AGREGAR MIXTO
+type MetodoPago = 'EFECTIVO' | 'TRANSFERENCIA' | 'MIXTO';
 
 type FormValues = {
   clienteId?: string;
@@ -32,11 +33,12 @@ type FormValues = {
   metodoPago: MetodoPago;
   referencia?: string;
   notas?: string;
-  montoEfectivo?: number;      // ✅ NUEVO
-  montoTransferencia?: number; // ✅ NUEVO
+  montoEfectivo?: number;
+  montoTransferencia?: number;
 };
 
 export const IngresoForm: React.FC<IngresoFormProps> = ({
+  initialData,
   onSubmit,
   onCancel,
   isLoading = false,
@@ -47,7 +49,7 @@ export const IngresoForm: React.FC<IngresoFormProps> = ({
   const [items, setItems] = useState<ItemFormulario[]>([]);
   const [loadingData, setLoadingData] = useState(true);
 
-  const { register, handleSubmit, formState: { errors }, watch } = useForm<FormValues>({
+  const { register, handleSubmit, formState: { errors }, watch, reset } = useForm<FormValues>({
     defaultValues: {
       clienteId: undefined,
       empleadoId: '',
@@ -66,6 +68,32 @@ export const IngresoForm: React.FC<IngresoFormProps> = ({
   useEffect(() => {
     loadData();
   }, []);
+
+  useEffect(() => {
+    // Cargar datos si está editando
+    if (initialData && servicios.length > 0) {
+      reset({
+        clienteId: initialData.clienteId || undefined,
+        empleadoId: initialData.empleadoId || '',
+        metodoPago: initialData.metodoPago as MetodoPago,
+        referencia: initialData.referencia || '',
+        notas: initialData.notas || '',
+        montoEfectivo: initialData.montoEfectivo || undefined,
+        montoTransferencia: initialData.montoTransferencia || undefined,
+      });
+      
+      // Cargar items
+      const itemsIniciales: ItemFormulario[] = initialData.items.map((item, idx) => ({
+        tempId: `item-${idx}`,
+        servicioId: item.servicioId,
+        cantidad: item.cantidad,
+        precioUnitario: item.precioUnitario,
+        subtotal: item.subtotal,
+        nombreServicio: item.servicio.nombre,
+      }));
+      setItems(itemsIniciales);
+    }
+  }, [initialData, servicios, reset]);
 
   const loadData = async () => {
     try {
@@ -152,7 +180,7 @@ export const IngresoForm: React.FC<IngresoFormProps> = ({
       return;
     }
 
-    // ✅ VALIDACIÓN PARA PAGO MIXTO
+    // Validación para pago mixto
     if (data.metodoPago === 'MIXTO') {
       const total = calcularTotal();
       const efectivo = data.montoEfectivo || 0;
@@ -177,7 +205,6 @@ export const IngresoForm: React.FC<IngresoFormProps> = ({
       metodoPago: data.metodoPago,
       referencia: data.referencia || undefined,
       notas: data.notas || undefined,
-      // ✅ NUEVO: Incluir montos solo si es pago mixto
       montoEfectivo: data.metodoPago === 'MIXTO' ? data.montoEfectivo : undefined,
       montoTransferencia: data.metodoPago === 'MIXTO' ? data.montoTransferencia : undefined,
       items: items.map(({ servicioId, cantidad, precioUnitario, subtotal }) => ({
@@ -407,7 +434,6 @@ export const IngresoForm: React.FC<IngresoFormProps> = ({
             <span className="font-medium">Transferencia</span>
           </label>
 
-          {/* ✅ NUEVO: Opción pago mixto */}
           <label
             className={`flex items-center justify-center gap-2 p-4 border-2 rounded-lg cursor-pointer transition-colors ${
               metodoPago === "MIXTO"
@@ -427,7 +453,7 @@ export const IngresoForm: React.FC<IngresoFormProps> = ({
         </div>
       </div>
 
-      {/* ✅ NUEVO: Campos para pago mixto */}
+      {/* Campos para pago mixto */}
       {metodoPago === 'MIXTO' && (
         <div className="bg-amber-50 p-4 rounded-lg space-y-4 border-2 border-amber-200">
           <h4 className="font-semibold text-gray-900 flex items-center gap-2">
@@ -469,7 +495,6 @@ export const IngresoForm: React.FC<IngresoFormProps> = ({
             </div>
           </div>
 
-          {/* Verificación visual */}
           <div className="bg-white p-3 rounded-lg border border-amber-300">
             <div className="flex justify-between items-center text-sm">
               <span className="text-gray-600">Total a pagar:</span>
@@ -532,7 +557,7 @@ export const IngresoForm: React.FC<IngresoFormProps> = ({
           variant="primary"
           disabled={isLoading || items.length === 0}
         >
-          {isLoading ? "Registrando..." : "Registrar Venta"}
+          {isLoading ? "Guardando..." : initialData ? "Actualizar Venta" : "Registrar Venta"}
         </Button>
       </div>
     </form>

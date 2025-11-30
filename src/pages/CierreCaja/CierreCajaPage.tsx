@@ -1,3 +1,5 @@
+// src/pages/CierreCaja/CierreCajaPage.tsx - CORREGIDO CON TRANSFERENCIAS
+
 import React, { useEffect, useState } from 'react';
 import {
   Plus,
@@ -48,7 +50,7 @@ const CierreCajaPage: React.FC = () => {
   const [isAperturaModalOpen, setIsAperturaModalOpen] = useState(false);
   const [isAperturaSubmitting, setIsAperturaSubmitting] = useState(false);
 
-  // Apertura detalle modal (similar al detalle de cierre)
+  // Apertura detalle modal
   const [aperturaSeleccionada, setAperturaSeleccionada] = useState<any | null>(null);
   const [isAperturaDetalleOpen, setIsAperturaDetalleOpen] = useState(false);
   
@@ -63,7 +65,6 @@ const CierreCajaPage: React.FC = () => {
   const loadData = async () => {
     setIsInitialLoading(true);
     try {
-      // Cargar datos en paralelo
       await Promise.all([
         fetchCierres(),
         fetchEstadisticas(),
@@ -71,7 +72,6 @@ const CierreCajaPage: React.FC = () => {
         fetchAperturasEstadisticas()
       ]);
       
-      // Luego cargar los datos que dependen de los anteriores
       await Promise.all([
         verificarPuedeCerrar(),
         fetchAperturaAbierta()
@@ -112,7 +112,6 @@ const CierreCajaPage: React.FC = () => {
     }
   };
 
-  // Abrir: abrir modal
   const handleAbrirCaja = () => {
     if (aperturaAbierta) {
       alert('Ya existe una apertura de caja para hoy');
@@ -121,10 +120,15 @@ const CierreCajaPage: React.FC = () => {
     setIsAperturaModalOpen(true);
   };
 
-  const handleAbrirSubmit = async (montoInicial: number, notas?: string) => {
+  // ✅ CORREGIDO: Parámetros en orden correcto
+  const handleAbrirSubmit = async (montoEfectivo: number, montoTransferencia: number, notas?: string) => {
     setIsAperturaSubmitting(true);
     try {
-      await cierreCajaService.open({ montoInicial, notas });
+      await cierreCajaService.open({ 
+        montoInicial: montoEfectivo,
+        montoTransferencias: montoTransferencia,
+        notas 
+      });
       alert('Apertura registrada');
       setIsAperturaModalOpen(false);
       await fetchAperturaAbierta();
@@ -154,7 +158,8 @@ const CierreCajaPage: React.FC = () => {
     }
   };
 
-  const handleSubmit = async (efectivoFinal: number, notas?: string) => {
+  // ✅ CORREGIDO: Parámetros en orden correcto
+  const handleSubmit = async (efectivoFinal: number, transferenciasFinal: number, notas?: string) => {
     if (!datosCierre) return;
 
     setIsSubmitting(true);
@@ -162,12 +167,13 @@ const CierreCajaPage: React.FC = () => {
       await cierreCajaService.create({
         efectivoInicial: datosCierre.efectivoInicial,
         efectivoFinal,
+        transferenciasInicial: datosCierre.transferenciasInicial,
+        transferenciasFinal,
         notas,
       });
       alert('Cierre de caja registrado exitosamente');
       setIsModalFormOpen(false);
       setDatosCierre(null);
-      // refrescar y asegurarse de que la apertura quede cerrada si corresponde
       await loadData();
     } catch (error: any) {
       alert(error.response?.data?.message || 'Error al registrar cierre');
@@ -197,7 +203,6 @@ const CierreCajaPage: React.FC = () => {
     }
   };
 
-  // Apertura: ver detalle (simple modal)
   const handleVerApertura = (a: any) => {
     setAperturaSeleccionada(a);
     setIsAperturaDetalleOpen(true);
@@ -206,7 +211,6 @@ const CierreCajaPage: React.FC = () => {
   const handleEliminarApertura = async (a: any) => {
     if (!confirm(`¿Eliminar apertura del ${format(new Date(a.fecha), 'dd/MM/yyyy HH:mm')}?`)) return;
     try {
-      // No hay endpoint 'delete apertura' en backend por defecto — si lo tienes, úsalo.
       alert('Eliminar apertura: implementa endpoint DELETE /api/cierre-caja/aperturas/:id en backend para habilitar.');
     } catch (err: any) {
       alert(err.response?.data?.message || 'Error al eliminar apertura');
@@ -236,11 +240,11 @@ const CierreCajaPage: React.FC = () => {
     <div className="p-6 max-w-7xl mx-auto">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">Cierre y apertura de Caja</h1>
+        <h1 className="text-3xl font-bold text-gray-900">Cierre y Apertura de Caja</h1>
         <p className="text-gray-600 mt-1">Cuadre diario de efectivo y control de diferencias</p>
       </div>
 
-      {/* Estadísticas (ahora 5 tarjetas iguales: 4 cierres + 1 aperturas) */}
+      {/* Estadísticas */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-6">
         {/* Card 1: Total Cierres */}
         <Card className="!p-0">
@@ -257,11 +261,11 @@ const CierreCajaPage: React.FC = () => {
           </div>
         </Card>
 
-         <Card className="!p-0">
+        <Card className="!p-0">
           <div className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 mb-1">Aperturas totales</p>
+                <p className="text-sm text-gray-600 mb-1">Aperturas Totales</p>
                 <p className="text-3xl font-bold text-gray-900">{aperturasEstadisticas?.totalAperturas ?? 0}</p>
               </div>
               <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
@@ -277,7 +281,7 @@ const CierreCajaPage: React.FC = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 mb-1">Diferencia Total</p>
-                <p className={`text-2xl font-bold ${ (estadisticas?.diferenciaTotal ?? 0) >= 0 ? 'text-green-600' : 'text-red-600' }`}>
+                <p className={`text-2xl font-bold ${(estadisticas?.diferenciaTotal ?? 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                   {(estadisticas?.diferenciaTotal ?? 0) >= 0 ? '+' : ''}
                   {formatCurrency(estadisticas?.diferenciaTotal ?? 0)}
                 </p>
@@ -306,7 +310,7 @@ const CierreCajaPage: React.FC = () => {
           </div>
         </Card>
 
-        {/* Card 4: Con Diferencias (Cierres) */}
+        {/* Card 4: Con Diferencias */}
         <Card className="!p-0">
           <div className="p-6">
             <div>
@@ -331,20 +335,22 @@ const CierreCajaPage: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-3">
-            {/* Mostrar botón Abrir caja si no hay apertura */}
+            {/* Botón Abrir caja */}
             {!loadingApertura && !aperturaAbierta && (
               <Button
                 onClick={handleAbrirCaja}
-                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 transition-opacity duration-300"
+                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700"
               >
-                Abrir caja
+                Abrir Caja
               </Button>
             )}
 
-            {/* Mostrar info de apertura si existe */}
+            {/* Info de apertura */}
             {!loadingApertura && aperturaAbierta && (
               <div className="text-sm text-gray-700">
-                Apertura: {new Date(aperturaAbierta.fecha).toLocaleTimeString()} • Inicial: {formatCurrency(aperturaAbierta.montoInicial)}
+                Apertura: {new Date(aperturaAbierta.fecha).toLocaleTimeString()} • 
+                💵 {formatCurrency(aperturaAbierta.montoInicial)} • 
+                💳 {formatCurrency(aperturaAbierta.montoTransferencias || 0)}
               </div>
             )}
 
@@ -352,7 +358,7 @@ const CierreCajaPage: React.FC = () => {
             {puedeCerrar ? (
               <Button
                 onClick={handleNuevoCierre}
-                className="flex items-center gap-2 bg-green-600 hover:bg-green-700 transition-opacity duration-300"
+                className="flex items-center gap-2 bg-green-600 hover:bg-green-700"
               >
                 <Plus size={20} />
                 Realizar Cierre
@@ -402,12 +408,24 @@ const CierreCajaPage: React.FC = () => {
                   const diferenciaSignificativa = Math.abs(cierre.diferencia) > 20000;
                   return (
                     <tr key={cierre.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{format(new Date(cierre.fecha), 'dd/MM/yyyy', { locale: es })}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{formatCurrency(cierre.efectivoInicial)}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-green-600">+{formatCurrency(cierre.ingresos)}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-red-600">-{formatCurrency(cierre.egresos)}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-blue-600">{formatCurrency(cierre.efectivoEsperado)}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">{formatCurrency(cierre.efectivoFinal)}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        {format(new Date(cierre.fecha), 'dd/MM/yyyy', { locale: es })}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                        {formatCurrency(cierre.efectivoInicial)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-green-600">
+                        +{formatCurrency(cierre.ingresos)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-red-600">
+                        -{formatCurrency(cierre.egresos)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-blue-600">
+                        {formatCurrency(cierre.efectivoEsperado)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
+                        {formatCurrency(cierre.efectivoFinal)}
+                      </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`text-sm font-bold ${cierre.diferencia === 0 ? 'text-green-600' : cierre.diferencia > 0 ? 'text-green-600' : 'text-red-600'}`}>
                           {cierre.diferencia >= 0 ? '+' : ''}
@@ -416,11 +434,17 @@ const CierreCajaPage: React.FC = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         {cierre.diferencia === 0 ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium"><CheckCircle size={12} />Exacto</span>
+                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium">
+                            <CheckCircle size={12} />Exacto
+                          </span>
                         ) : diferenciaSignificativa ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-medium"><AlertCircle size={12} />Con diferencia</span>
+                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-medium">
+                            <AlertCircle size={12} />Con diferencia
+                          </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 text-gray-800 rounded-full text-xs font-medium">Menor</span>
+                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 text-gray-800 rounded-full text-xs font-medium">
+                            Menor
+                          </span>
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right">
@@ -429,17 +453,14 @@ const CierreCajaPage: React.FC = () => {
                             size="sm"
                             variant="ghost"
                             onClick={() => handleVerDetalle(cierre)}
-                            aria-label="Ver cierre"
                             title="Ver"
                           >
                             <Eye size={16} />
                           </Button>
-
                           <Button
                             size="sm"
                             variant="ghost"
                             onClick={() => handleEliminar(cierre)}
-                            aria-label="Eliminar cierre"
                             title="Eliminar"
                           >
                             <Trash2 size={16} />
@@ -455,7 +476,7 @@ const CierreCajaPage: React.FC = () => {
         )}
       </Card>
 
-      {/* Historial de Aperturas (estilo igual al de cierres) */}
+      {/* Historial de Aperturas */}
       <Card title="Historial de Aperturas" className="mb-6">
         {aperturas.length === 0 ? (
           <div className="text-center py-12">
@@ -470,7 +491,8 @@ const CierreCajaPage: React.FC = () => {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Monto Inicial</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">💵 Efectivo</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">💳 Transferencias</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Notas</th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Acciones</th>
@@ -481,33 +503,43 @@ const CierreCajaPage: React.FC = () => {
                   const isAbierta = a.estado === 'ABIERTA';
                   return (
                     <tr key={a.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{format(new Date(a.fecha), 'dd/MM/yyyy HH:mm', { locale: es })}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{formatCurrency(a.montoInicial)}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        {format(new Date(a.fecha), 'dd/MM/yyyy HH:mm', { locale: es })}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                        {formatCurrency(a.montoInicial)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-purple-600">
+                        {formatCurrency(a.montoTransferencias || 0)}
+                      </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         {isAbierta ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium"><CheckCircle size={12} />Abierta</span>
+                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium">
+                            <CheckCircle size={12} />Abierta
+                          </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 text-gray-800 rounded-full text-xs font-medium">Cerrada</span>
+                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 text-gray-800 rounded-full text-xs font-medium">
+                            Cerrada
+                          </span>
                         )}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{a.notas || '-'}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {a.notas || '-'}
+                      </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right">
                         <div className="flex justify-end gap-2">
                           <Button
                             size="sm"
                             variant="ghost"
                             onClick={() => handleVerApertura(a)}
-                            aria-label="Ver apertura"
                             title="Ver"
                           >
                             <Eye size={16} />
                           </Button>
-
                           <Button
                             size="sm"
                             variant="ghost"
                             onClick={() => handleEliminarApertura(a)}
-                            aria-label="Eliminar apertura"
                             title="Eliminar"
                           >
                             <Trash2 size={16} />
@@ -582,7 +614,7 @@ const CierreCajaPage: React.FC = () => {
         )}
       </Modal>
 
-      {/* Modal Detalle Apertura (simple) */}
+      {/* Modal Detalle Apertura */}
       <Modal
         isOpen={isAperturaDetalleOpen}
         onClose={() => {
@@ -596,11 +628,21 @@ const CierreCajaPage: React.FC = () => {
           <div className="space-y-4">
             <div>
               <p className="text-xs text-gray-500">Fecha</p>
-              <p className="text-sm font-medium text-gray-900">{format(new Date(aperturaSeleccionada.fecha), 'dd/MM/yyyy HH:mm', { locale: es })}</p>
+              <p className="text-sm font-medium text-gray-900">
+                {format(new Date(aperturaSeleccionada.fecha), 'dd/MM/yyyy HH:mm', { locale: es })}
+              </p>
             </div>
             <div>
-              <p className="text-xs text-gray-500">Monto inicial</p>
-              <p className="text-lg font-semibold text-gray-900">{formatCurrency(aperturaSeleccionada.montoInicial)}</p>
+              <p className="text-xs text-gray-500">💵 Efectivo Inicial</p>
+              <p className="text-lg font-semibold text-gray-900">
+                {formatCurrency(aperturaSeleccionada.montoInicial)}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500">💳 Transferencias Inicial</p>
+              <p className="text-lg font-semibold text-purple-600">
+                {formatCurrency(aperturaSeleccionada.montoTransferencias || 0)}
+              </p>
             </div>
             <div>
               <p className="text-xs text-gray-500">Estado</p>
@@ -612,10 +654,15 @@ const CierreCajaPage: React.FC = () => {
             </div>
 
             <div className="flex justify-end gap-2 pt-2">
-              <Button variant="ghost" onClick={() => {
-                setIsAperturaDetalleOpen(false);
-                setAperturaSeleccionada(null);
-              }}>Cerrar</Button>
+              <Button 
+                variant="ghost" 
+                onClick={() => {
+                  setIsAperturaDetalleOpen(false);
+                  setAperturaSeleccionada(null);
+                }}
+              >
+                Cerrar
+              </Button>
             </div>
           </div>
         )}

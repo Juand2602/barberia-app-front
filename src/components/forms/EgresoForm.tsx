@@ -1,12 +1,14 @@
-import React from 'react';
+// src/components/forms/EgresoForm.tsx - COMPLETO CON EDICIÓN
+
+import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { Input } from '@components/ui/Input';
 import { Button } from '@components/ui/Button';
-
-import { CreateTransaccionDTO } from '@/types/transaccion.types';
+import { CreateTransaccionDTO, Transaccion } from '@/types/transaccion.types';
 import { CATEGORIAS_EGRESOS } from '@/types/transaccion.types';
 
 interface EgresoFormProps {
+  initialData?: Transaccion;
   onSubmit: (data: CreateTransaccionDTO) => void;
   onCancel: () => void;
   isLoading?: boolean;
@@ -24,6 +26,7 @@ type FormValues = {
 };
 
 export const EgresoForm: React.FC<EgresoFormProps> = ({
+  initialData,
   onSubmit,
   onCancel,
   isLoading = false,
@@ -33,6 +36,7 @@ export const EgresoForm: React.FC<EgresoFormProps> = ({
     handleSubmit,
     formState: { errors },
     watch,
+    reset,
   } = useForm<FormValues>({
     defaultValues: {
       concepto: '',
@@ -44,8 +48,21 @@ export const EgresoForm: React.FC<EgresoFormProps> = ({
     },
   });
 
-  // Aseguramos el tipo correcto para metodoPago
   const metodoPago = (watch('metodoPago') ?? 'EFECTIVO') as MetodoPago;
+
+  useEffect(() => {
+    // Cargar datos si está editando
+    if (initialData) {
+      reset({
+        concepto: initialData.concepto || '',
+        categoria: initialData.categoria || '',
+        total: initialData.total,
+        metodoPago: initialData.metodoPago as MetodoPago,
+        referencia: initialData.referencia || '',
+        notas: initialData.notas || '',
+      });
+    }
+  }, [initialData, reset]);
 
   const handleFormSubmit = (data: FormValues) => {
     const totalNumber = typeof data.total === 'string' ? parseFloat(data.total) : Number(data.total);
@@ -56,7 +73,6 @@ export const EgresoForm: React.FC<EgresoFormProps> = ({
       categoria: data.categoria,
       total: totalNumber,
       metodoPago: data.metodoPago,
-      // La referencia es opcional, independientemente del método de pago
       referencia: data.referencia || undefined,
       notas: data.notas || undefined,
       items: [], 
@@ -167,7 +183,7 @@ export const EgresoForm: React.FC<EgresoFormProps> = ({
         </div>
       </div>
 
-      {/* Referencia (solo si es transferencia) - ahora es opcional */}
+      {/* Referencia */}
       {metodoPago === "TRANSFERENCIA" && (
         <Input
           label="Número de Referencia (opcional)"
@@ -201,7 +217,7 @@ export const EgresoForm: React.FC<EgresoFormProps> = ({
           Cancelar
         </Button>
         <Button type="submit" variant="primary" disabled={isLoading}>
-          {isLoading ? "Registrando..." : "Registrar Egreso"}
+          {isLoading ? "Guardando..." : initialData ? "Actualizar Egreso" : "Registrar Egreso"}
         </Button>
       </div>
     </form>

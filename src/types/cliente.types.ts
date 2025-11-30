@@ -1,5 +1,7 @@
 // src/types/cliente.types.ts - ACTUALIZADO
 
+import { Cita as CitaCompleta } from './cita.types';
+
 export interface Cliente {
   id: string;
   nombre: string;
@@ -8,7 +10,7 @@ export interface Cliente {
   fechaRegistro: string;
   notas: string | null;
   activo: boolean;
-  // 🌟 NUEVO: Campos de sellos
+  // 🌟 Campos de sellos
   sellos: number;
   sellosCanjeados: number;
   ultimoSello: string | null;
@@ -21,18 +23,8 @@ export interface Cliente {
 }
 
 export interface ClienteDetalle extends Cliente {
-  citas: Cita[];
+  citas: CitaCompleta[]; // ✅ Usar el tipo completo de cita.types.ts
   transacciones: Transaccion[];
-}
-
-export interface Cita {
-  id: string;
-  servicioNombre: string;
-  fechaHora: string;
-  estado: string;
-  empleado: {
-    nombre: string;
-  };
 }
 
 export interface Transaccion {
@@ -70,7 +62,7 @@ export interface UpdateClienteDTO {
   activo?: boolean;
 }
 
-// 🌟 NUEVO: Tipos para sistema de sellos
+// 🌟 Tipos para sistema de sellos
 export interface HistorialSello {
   id: string;
   clienteId: string;

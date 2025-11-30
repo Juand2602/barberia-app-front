@@ -1,12 +1,13 @@
-// src/pages/Transacciones/TransaccionesPage.tsx - COMPLETO Y CORREGIDO
+// src/pages/Transacciones/TransaccionesPage.tsx - ACTUALIZADO CON ESTADÍSTICAS DIARIAS
 
 import React, { useEffect, useState } from 'react';
-import { Plus, TrendingUp, TrendingDown, Filter, Clock, Calendar } from 'lucide-react';
+import { Plus, TrendingUp, TrendingDown, Filter, Clock, Calendar, Search } from 'lucide-react';
 import { useTransaccionesStore } from '@stores/transaccionesStore';
 import { useEmpleadosStore } from '@stores/empleadosStore';
 import { transaccionesService } from '@services/transacciones.service';
 import { Card } from '@components/ui/Card';
 import { Button } from '@components/ui/Button';
+import { Input } from '@components/ui/Input';
 import { Modal } from '@components/ui/Modal';
 import { TransaccionesTable } from '@components/tables/TransaccionesTable';
 import { IngresoForm } from '@components/forms/IngresoForm';
@@ -16,7 +17,7 @@ import { RecibirPagoModal } from '@components/transacciones/RecibirPagoModal';
 import { ImprimirTicket } from '@components/transacciones/ImprimirTicket';
 import { Transaccion, CreateTransaccionDTO, TipoTransaccion, MarcarPagadaDTO, TransaccionItemDTO, EstadoPago } from '@/types/transaccion.types';
 
-type ModalType = 'ingreso' | 'egreso' | null;
+type ModalType = 'ingreso' | 'egreso' | 'editar' | null;
 
 export const TransaccionesPage: React.FC = () => {
   const { transacciones, loading, estadisticas, fetchTransacciones, fetchEstadisticas } =
@@ -28,9 +29,11 @@ export const TransaccionesPage: React.FC = () => {
   const [isModalPagoOpen, setIsModalPagoOpen] = useState(false);
   const [isModalTicketOpen, setIsModalTicketOpen] = useState(false);
   const [transaccionSeleccionada, setTransaccionSeleccionada] = useState<Transaccion | null>(null);
+  const [editingTransaccion, setEditingTransaccion] = useState<Transaccion | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Filtros
+  const [searchTerm, setSearchTerm] = useState('');
   const [tipoFiltro, setTipoFiltro] = useState<TipoTransaccion | ''>('');
   const [empleadoFiltro, setEmpleadoFiltro] = useState<string>('');
   const [metodoPagoFiltro, setMetodoPagoFiltro] = useState<string>('');
@@ -40,7 +43,7 @@ export const TransaccionesPage: React.FC = () => {
   useEffect(() => {
     fetchEmpleados(true);
     loadTransacciones();
-    fetchEstadisticas();
+    loadEstadisticas(); // ✅ Cambio aquí
   }, []);
 
   useEffect(() => {
@@ -68,26 +71,43 @@ export const TransaccionesPage: React.FC = () => {
     fetchTransacciones(filtros);
   };
 
+  // ✅ NUEVA FUNCIÓN: Cargar estadísticas solo del día actual
+  const loadEstadisticas = () => {
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+    const mañana = new Date(hoy);
+    mañana.setDate(mañana.getDate() + 1);
+    
+    fetchEstadisticas(hoy, mañana);
+  };
+
   const handleOpenModal = (type: 'ingreso' | 'egreso') => {
+    setEditingTransaccion(null);
     setModalType(type);
   };
 
   const handleCloseModal = () => {
     setModalType(null);
+    setEditingTransaccion(null);
   };
 
   const handleSubmit = async (data: CreateTransaccionDTO) => {
     setIsSubmitting(true);
     try {
-      await transaccionesService.create(data);
-      alert(
-        `${data.tipo === 'INGRESO' ? 'Venta' : 'Egreso'} registrado exitosamente`
-      );
+      if (editingTransaccion) {
+        await transaccionesService.update(editingTransaccion.id, data);
+        alert('Transacción actualizada exitosamente');
+      } else {
+        await transaccionesService.create(data);
+        alert(
+          `${data.tipo === 'INGRESO' ? 'Venta' : 'Egreso'} registrado exitosamente`
+        );
+      }
       handleCloseModal();
       loadTransacciones();
-      fetchEstadisticas();
+      loadEstadisticas(); // ✅ Cambio aquí
     } catch (error: any) {
-      alert(error.response?.data?.message || 'Error al registrar transacción');
+      alert(error.response?.data?.message || 'Error al guardar transacción');
     } finally {
       setIsSubmitting(false);
     }
@@ -96,6 +116,11 @@ export const TransaccionesPage: React.FC = () => {
   const handleView = (transaccion: Transaccion) => {
     setTransaccionSeleccionada(transaccion);
     setIsModalDetalleOpen(true);
+  };
+
+  const handleEdit = (transaccion: Transaccion) => {
+    setEditingTransaccion(transaccion);
+    setModalType(transaccion.tipo === 'INGRESO' ? 'ingreso' : 'egreso');
   };
 
   const handleRecibirPago = (transaccion: Transaccion) => {
@@ -129,7 +154,7 @@ export const TransaccionesPage: React.FC = () => {
       setIsModalPagoOpen(false);
       setTransaccionSeleccionada(null);
       loadTransacciones();
-      fetchEstadisticas();
+      loadEstadisticas(); // ✅ Cambio aquí
     } catch (error: any) {
       throw error;
     }
@@ -157,7 +182,7 @@ export const TransaccionesPage: React.FC = () => {
       await transaccionesService.delete(transaccion.id);
       alert('Transacción eliminada exitosamente');
       loadTransacciones();
-      fetchEstadisticas();
+      loadEstadisticas(); // ✅ Cambio aquí
     } catch (error: any) {
       alert(error.response?.data?.message || 'Error al eliminar transacción');
     }
@@ -178,6 +203,13 @@ export const TransaccionesPage: React.FC = () => {
     }).format(amount);
   };
 
+  // Filtrar transacciones por nombre de cliente
+  const transaccionesFiltradas = searchTerm
+    ? transacciones.filter((t) =>
+        t.cliente?.nombre.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    : transacciones;
+
   return (
     <div className="p-6 max-w-7xl mx-auto">
       {/* Header */}
@@ -193,7 +225,7 @@ export const TransaccionesPage: React.FC = () => {
             <div className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600 mb-1">Total Ingresos</p>
+                  <p className="text-sm text-gray-600 mb-1">Total Ingresos (Hoy)</p>
                   <p className="text-2xl font-bold text-green-600">
                     {formatCurrency(estadisticas.totalIngresos)}
                   </p>
@@ -212,7 +244,7 @@ export const TransaccionesPage: React.FC = () => {
             <div className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600 mb-1">Total Egresos</p>
+                  <p className="text-sm text-gray-600 mb-1">Total Egresos (Hoy)</p>
                   <p className="text-2xl font-bold text-red-600">
                     {formatCurrency(estadisticas.totalEgresos)}
                   </p>
@@ -230,7 +262,7 @@ export const TransaccionesPage: React.FC = () => {
           <Card className="!p-0">
             <div className="p-6">
               <div>
-                <p className="text-sm text-gray-600 mb-1">Balance</p>
+                <p className="text-sm text-gray-600 mb-1">Balance (Hoy)</p>
                 <p
                   className={`text-2xl font-bold ${
                     estadisticas.balance >= 0 ? 'text-green-600' : 'text-red-600'
@@ -292,8 +324,26 @@ export const TransaccionesPage: React.FC = () => {
             </Button>
           </div>
 
-          {/* Filtros detallados */}
+          {/* Barra de búsqueda + Filtros */}
           <div className="flex flex-wrap items-center justify-between gap-4">
+            {/* Búsqueda por cliente */}
+            <div className="flex-1 max-w-md">
+              <div className="relative">
+                <Search
+                  className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                  size={20}
+                />
+                <Input
+                  type="text"
+                  placeholder="Buscar por nombre de cliente..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            </div>
+
+            {/* Filtros */}
             <div className="flex gap-3 items-center flex-wrap">
               <Filter size={18} className="text-gray-600" />
 
@@ -338,6 +388,7 @@ export const TransaccionesPage: React.FC = () => {
                 <option value="">Todos los métodos</option>
                 <option value="EFECTIVO">Efectivo</option>
                 <option value="TRANSFERENCIA">Transferencia</option>
+                <option value="MIXTO">Mixto</option>
                 <option value="PENDIENTE">Pendiente</option>
               </select>
             </div>
@@ -373,8 +424,9 @@ export const TransaccionesPage: React.FC = () => {
           </div>
         ) : (
           <TransaccionesTable
-            transacciones={transacciones}
+            transacciones={transaccionesFiltradas}
             onView={handleView}
+            onEdit={handleEdit}
             onDelete={handleDelete}
             onRecibirPago={handleRecibirPago}
             onImprimir={handleImprimir}
@@ -386,10 +438,11 @@ export const TransaccionesPage: React.FC = () => {
       <Modal
         isOpen={modalType === 'ingreso'}
         onClose={handleCloseModal}
-        title="Registrar Venta"
+        title={editingTransaccion ? 'Editar Venta' : 'Registrar Venta'}
         size="xl"
       >
         <IngresoForm
+          initialData={editingTransaccion || undefined}
           onSubmit={handleSubmit}
           onCancel={handleCloseModal}
           isLoading={isSubmitting}
@@ -400,10 +453,11 @@ export const TransaccionesPage: React.FC = () => {
       <Modal
         isOpen={modalType === 'egreso'}
         onClose={handleCloseModal}
-        title="Registrar Gasto"
+        title={editingTransaccion ? 'Editar Gasto' : 'Registrar Gasto'}
         size="lg"
       >
         <EgresoForm
+          initialData={editingTransaccion || undefined}
           onSubmit={handleSubmit}
           onCancel={handleCloseModal}
           isLoading={isSubmitting}

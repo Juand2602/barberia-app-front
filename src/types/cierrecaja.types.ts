@@ -1,9 +1,14 @@
+// src/types/cierrecaja.types.ts - ACTUALIZADO
+
 export interface CierreCaja {
   id: string;
   fecha: string;
   efectivoInicial: number;
   efectivoFinal: number;
   efectivoEsperado: number;
+  transferenciasInicial?: number;
+  transferenciasFinal?: number;
+  transferenciasEsperadas?: number;
   ingresos: number;
   egresos: number;
   diferencia: number;
@@ -16,12 +21,16 @@ export interface CreateCierreCajaDTO {
   fecha?: string;
   efectivoInicial: number;
   efectivoFinal: number;
+  transferenciasInicial?: number;
+  transferenciasFinal?: number;
   notas?: string;
 }
 
 export interface UpdateCierreCajaDTO {
   efectivoInicial?: number;
   efectivoFinal?: number;
+  transferenciasInicial?: number;
+  transferenciasFinal?: number;
   notas?: string;
 }
 
@@ -30,8 +39,12 @@ export interface DatosCierre {
   efectivoInicial: number;
   ingresosEfectivo: number;
   egresosEfectivo: number;
-  totalTransferencias: number;
   efectivoEsperado: number;
+  transferenciasInicial?: number;
+  ingresosTransferencias?: number;
+  egresosTransferencias?: number;
+  transferenciasEsperadas?: number;
+  totalTransferencias: number;
 }
 
 export interface PuedeCerrarResponse {

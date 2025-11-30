@@ -1,3 +1,5 @@
+// src/services/cierrecaja.service.ts - CORREGIDO CON TRANSFERENCIAS
+
 import { api } from './api';
 import {
   CierreCaja,
@@ -91,19 +93,25 @@ export const cierreCajaService = {
     await api.delete(`/cierre-caja/${id}`);
   },
 
-    // Obtener apertura abierta para hoy
+  // Obtener apertura abierta para hoy
   async getAperturaAbierta(): Promise<any | null> {
     const response = await api.get('/cierre-caja/open');
     return response.data.data;
   },
 
-  // Crear apertura
-  async open(data: { montoInicial: number; usuarioId?: number; notas?: string }) {
+  // ✅ CORREGIDO: Crear apertura CON TRANSFERENCIAS
+  async open(data: { 
+    montoInicial: number; 
+    montoTransferencias?: number;  // ✅ AGREGADO
+    usuarioId?: number; 
+    notas?: string 
+  }) {
     const response = await api.post('/cierre-caja/open', data);
     return response.data.data;
   },
 
-    async getAperturas(fechaInicio?: Date, fechaFin?: Date) {
+  // Obtener aperturas
+  async getAperturas(fechaInicio?: Date, fechaFin?: Date) {
     const params: any = {};
     if (fechaInicio) params.fechaInicio = fechaInicio.toISOString();
     if (fechaFin) params.fechaFin = fechaFin.toISOString();
@@ -119,6 +127,4 @@ export const cierreCajaService = {
     const response = await api.get('/cierre-caja/aperturas/estadisticas', { params });
     return response.data.data;
   },
-
 };
-

@@ -1,3 +1,5 @@
+// src/components/cierrecaja/CierreDetalle.tsx - CON TRANSFERENCIAS
+
 import React from 'react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -59,51 +61,85 @@ export const CierreDetalle: React.FC<CierreDetalleProps> = ({
         )}
       </div>
 
-      {/* Resumen */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-blue-50 p-4 rounded-lg">
-          <p className="text-sm text-blue-900 mb-1">Efectivo Inicial</p>
-          <p className="text-xl font-bold text-blue-600">
-            {formatCurrency(cierre.efectivoInicial)}
-          </p>
+      {/* Resumen - 2 filas */}
+      <div className="space-y-4">
+        {/* Primera fila - Efectivo */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="bg-blue-50 p-4 rounded-lg border-2 border-blue-200">
+            <p className="text-xs text-blue-900 mb-1">💵 Efectivo Inicial</p>
+            <p className="text-lg font-bold text-blue-600">
+              {formatCurrency(cierre.efectivoInicial)}
+            </p>
+          </div>
+
+          <div className="bg-green-50 p-4 rounded-lg border-2 border-green-200">
+            <p className="text-xs text-green-900 mb-1">💵 Ingresos Efectivo</p>
+            <p className="text-lg font-bold text-green-600">
+              {formatCurrency(cierre.ingresos)}
+            </p>
+          </div>
+
+          <div className="bg-red-50 p-4 rounded-lg border-2 border-red-200">
+            <p className="text-xs text-red-900 mb-1">💵 Egresos Efectivo</p>
+            <p className="text-lg font-bold text-red-600">
+              {formatCurrency(cierre.egresos)}
+            </p>
+          </div>
+
+          <div className="bg-gray-50 p-4 rounded-lg border-2 border-gray-300">
+            <p className="text-xs text-gray-900 mb-1">💵 Efectivo Esperado</p>
+            <p className="text-lg font-bold text-gray-900">
+              {formatCurrency(cierre.efectivoEsperado)}
+            </p>
+          </div>
         </div>
 
-        <div className="bg-green-50 p-4 rounded-lg">
-          <p className="text-sm text-green-900 mb-1">Ingresos</p>
-          <p className="text-xl font-bold text-green-600">
-            {formatCurrency(cierre.ingresos)}
-          </p>
-        </div>
+        {/* Segunda fila - Transferencias */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="bg-purple-50 p-4 rounded-lg border-2 border-purple-200">
+            <p className="text-xs text-purple-900 mb-1">💳 Transferencias Inicial</p>
+            <p className="text-lg font-bold text-purple-600">
+              {formatCurrency(cierre.transferenciasInicial || 0)}
+            </p>
+          </div>
 
-        <div className="bg-red-50 p-4 rounded-lg">
-          <p className="text-sm text-red-900 mb-1">Egresos</p>
-          <p className="text-xl font-bold text-red-600">
-            {formatCurrency(cierre.egresos)}
-          </p>
-        </div>
+          <div className="bg-indigo-50 p-4 rounded-lg border-2 border-indigo-200">
+            <p className="text-xs text-indigo-900 mb-1">💳 Ingresos Transfer.</p>
+            <p className="text-lg font-bold text-indigo-600">
+              {formatCurrency(cierre.totalTransferencias)}
+            </p>
+          </div>
 
-        <div className="bg-purple-50 p-4 rounded-lg">
-          <p className="text-sm text-purple-900 mb-1">Transferencias</p>
-          <p className="text-xl font-bold text-purple-600">
-            {formatCurrency(cierre.totalTransferencias)}
-          </p>
+          <div className="bg-orange-50 p-4 rounded-lg border-2 border-orange-200">
+            <p className="text-xs text-orange-900 mb-1">💳 Egresos Transfer.</p>
+            <p className="text-lg font-bold text-orange-600">
+              {formatCurrency(0)} {/* Puedes agregar este campo si lo tienes */}
+            </p>
+          </div>
+
+          <div className="bg-gray-50 p-4 rounded-lg border-2 border-gray-300">
+            <p className="text-xs text-gray-900 mb-1">💳 Transfer. Esperadas</p>
+            <p className="text-lg font-bold text-gray-900">
+              {formatCurrency(cierre.transferenciasEsperadas || 0)}
+            </p>
+          </div>
         </div>
       </div>
 
-      {/* Cálculos */}
-      <div className="bg-gray-50 p-6 rounded-lg">
+      {/* Cálculos - Efectivo */}
+      <div className="bg-green-50 p-6 rounded-lg border-2 border-green-200">
         <div className="flex items-center gap-2 mb-4">
-          <Calculator className="text-gray-600" size={20} />
-          <h3 className="font-semibold text-gray-900">Cálculo del Cierre</h3>
+          <Calculator className="text-green-600" size={20} />
+          <h3 className="font-semibold text-green-900">💵 Cálculo Efectivo</h3>
         </div>
 
         <div className="space-y-3">
-          <div className="flex justify-between items-center pb-2 border-b border-gray-200">
+          <div className="flex justify-between items-center pb-2 border-b border-green-200">
             <span className="text-gray-700">Efectivo Inicial</span>
             <span className="font-medium">{formatCurrency(cierre.efectivoInicial)}</span>
           </div>
 
-          <div className="flex justify-between items-center text-green-600 pb-2 border-b border-gray-200">
+          <div className="flex justify-between items-center text-green-700 pb-2 border-b border-green-200">
             <span className="flex items-center gap-2">
               <TrendingUp size={16} />
               Ingresos en Efectivo
@@ -111,7 +147,7 @@ export const CierreDetalle: React.FC<CierreDetalleProps> = ({
             <span className="font-medium">+{formatCurrency(cierre.ingresos)}</span>
           </div>
 
-          <div className="flex justify-between items-center text-red-600 pb-2 border-b border-gray-200">
+          <div className="flex justify-between items-center text-red-600 pb-2 border-b border-green-200">
             <span className="flex items-center gap-2">
               <TrendingDown size={16} />
               Egresos en Efectivo
@@ -119,9 +155,9 @@ export const CierreDetalle: React.FC<CierreDetalleProps> = ({
             <span className="font-medium">-{formatCurrency(cierre.egresos)}</span>
           </div>
 
-          <div className="flex justify-between items-center pt-2 pb-2 border-b-2 border-gray-300">
+          <div className="flex justify-between items-center pt-2 pb-2 border-b-2 border-green-300">
             <span className="font-semibold text-gray-900">Efectivo Esperado</span>
-            <span className="text-xl font-bold text-blue-600">
+            <span className="text-xl font-bold text-green-700">
               {formatCurrency(cierre.efectivoEsperado)}
             </span>
           </div>
@@ -135,7 +171,52 @@ export const CierreDetalle: React.FC<CierreDetalleProps> = ({
         </div>
       </div>
 
-      {/* Diferencia */}
+      {/* Cálculos - Transferencias */}
+      <div className="bg-purple-50 p-6 rounded-lg border-2 border-purple-200">
+        <div className="flex items-center gap-2 mb-4">
+          <Calculator className="text-purple-600" size={20} />
+          <h3 className="font-semibold text-purple-900">💳 Cálculo Transferencias</h3>
+        </div>
+
+        <div className="space-y-3">
+          <div className="flex justify-between items-center pb-2 border-b border-purple-200">
+            <span className="text-gray-700">Transferencias Inicial</span>
+            <span className="font-medium">{formatCurrency(cierre.transferenciasInicial || 0)}</span>
+          </div>
+
+          <div className="flex justify-between items-center text-purple-700 pb-2 border-b border-purple-200">
+            <span className="flex items-center gap-2">
+              <TrendingUp size={16} />
+              Ingresos en Transferencias
+            </span>
+            <span className="font-medium">+{formatCurrency(cierre.totalTransferencias)}</span>
+          </div>
+
+          <div className="flex justify-between items-center text-orange-600 pb-2 border-b border-purple-200">
+            <span className="flex items-center gap-2">
+              <TrendingDown size={16} />
+              Egresos en Transferencias
+            </span>
+            <span className="font-medium">-{formatCurrency(0)}</span>
+          </div>
+
+          <div className="flex justify-between items-center pt-2 pb-2 border-b-2 border-purple-300">
+            <span className="font-semibold text-gray-900">Transferencias Esperadas</span>
+            <span className="text-xl font-bold text-purple-700">
+              {formatCurrency(cierre.transferenciasEsperadas || 0)}
+            </span>
+          </div>
+
+          <div className="flex justify-between items-center pt-2">
+            <span className="font-semibold text-gray-900">Transferencias Contadas</span>
+            <span className="text-xl font-bold text-gray-900">
+              {formatCurrency(cierre.transferenciasFinal || 0)}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Diferencia Total */}
       <div
         className={`p-6 rounded-lg border-2 ${
           cierre.diferencia === 0
@@ -151,8 +232,8 @@ export const CierreDetalle: React.FC<CierreDetalleProps> = ({
               {cierre.diferencia === 0
                 ? 'Cierre Exacto'
                 : cierre.diferencia > 0
-                ? 'Sobrante'
-                : 'Faltante'}
+                ? 'Sobrante Total'
+                : 'Faltante Total'}
             </p>
             <p
               className={`text-4xl font-bold ${
@@ -165,6 +246,9 @@ export const CierreDetalle: React.FC<CierreDetalleProps> = ({
             >
               {cierre.diferencia >= 0 ? '+' : ''}
               {formatCurrency(cierre.diferencia)}
+            </p>
+            <p className="text-xs text-gray-600 mt-2">
+              (Efectivo + Transferencias)
             </p>
           </div>
           {cierre.diferencia === 0 ? (
